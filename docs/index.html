@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tini — a notch for Windows</title>
+<meta name="description" content="tini is a free, open-source notch for Windows: your day and your AI agent in one small black pill at the top of your screen. Launching Oct 30.">
+<meta property="og:title" content="tini — a notch for Windows">
+<meta property="og:description" content="Your day and your AI agent, in one small black pill at the top of your screen. Free and open source. Launching Oct 30.">
+<meta property="og:image" content="https://dimas3007.github.io/tini/assets/trailer-poster.jpg">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23000'/%3E%3Crect x='17' y='20' width='10' height='24' rx='5' fill='%23F5F5F7'/%3E%3Crect x='37' y='20' width='10' height='24' rx='5' fill='%23F5F5F7'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script>(function(){var h=document.documentElement;h.classList.add("js");try{if(sessionStorage.getItem("tini-intro")&&!/[?&]intro/.test(location.search))h.classList.add("skip-intro")}catch(e){}})();</script>
+<style>
+:root {
+  --bg: #000; --card: #111113; --field: #161618; --graphite: #2c2c2e;
+  --hairline: rgba(255,255,255,.08); --hairline-2: rgba(255,255,255,.14);
+  --text: #f5f5f7; --text-2: rgba(245,245,247,.62); --text-3: rgba(245,245,247,.38);
+  --amber: #ffb340;
+  --display: Inter, "Segoe UI Variable Display", system-ui, sans-serif;
+  --body: Inter, "Segoe UI Variable Text", system-ui, sans-serif;
+  --serif: "Instrument Serif", Georgia, serif;
+  --mono: "Cascadia Mono", "SF Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--body); font-size: 17px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; }
+img, video { display: block; max-width: 100%; }
+[hidden] { display: none !important; }
+
+/* Nochi: two glowing eyes, drawn by JS as SVG (rounded-rect eyes, ^ ^ when happy) */
+.nochi { display: inline-block; position: relative; line-height: 0; }
+.nochi svg { display: block; overflow: visible; filter: drop-shadow(0 0 1.6px rgba(255,255,255,.75)) drop-shadow(0 0 4px rgba(255,255,255,.3)); }
+
+/* live notch stages */
+.stage { position: relative; overflow: hidden; border-radius: 26px; background: radial-gradient(900px 420px at 50% -10%, #4a4a50 0%, #222225 40%, #0c0c0d 80%, #050505 100%); box-shadow: 0 0 0 1px var(--hairline); }
+.stage-hero { margin-top: 44px; height: 250px; cursor: pointer; }
+.stage-mini { height: 92px; margin-top: auto; }
+.stage-card { margin-top: auto; }
+.island { position: absolute; top: 0; left: 50%; width: 0; height: 0; transform-origin: 0 0; }
+.shape { position: absolute; top: 0; left: 0; translate: -50% 0; background: #000; box-shadow: 0 0 0 .7px rgba(255,255,255,.1); }
+.shape::before, .shape::after { content: ""; position: absolute; top: 0; width: 8px; height: 8px; }
+.shape::before { left: -8px; background: radial-gradient(circle at 0 100%, transparent 7.5px, #000 8px); }
+.shape::after { right: -8px; background: radial-gradient(circle at 100% 100%, transparent 7.5px, #000 8px); }
+.layer { position: absolute; top: 0; left: 0; translate: -50% 0; opacity: 0; transform: translateY(-4px) scale(.96); transition: opacity .2s ease, transform .3s cubic-bezier(.2,.9,.3,1); pointer-events: none; font-family: var(--body); color: var(--text); white-space: nowrap; }
+.layer.on { opacity: 1; transform: none; transition-delay: .08s; pointer-events: auto; }
+.layer > * { position: absolute; }
+.layer .nochi { translate: -50% -50%; }
+.t-kicker { font-size: 11.5px; color: var(--text-2); }
+.t-title { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+.t-strong { font-size: 12.5px; font-weight: 600; }
+.t-dim { font-size: 11px; color: var(--text-3); }
+.ring-sm { width: 12px; height: 12px; border-radius: 50%; background: conic-gradient(var(--text) 0 var(--p, 40%), rgba(255,255,255,.14) var(--p, 40%) 100%); -webkit-mask: radial-gradient(circle, transparent 3.6px, #000 4px); mask: radial-gradient(circle, transparent 3.6px, #000 4px); }
+.ring-lg { width: 22px; height: 22px; border-radius: 50%; background: conic-gradient(var(--text) 0 var(--p, 26%), rgba(255,255,255,.12) var(--p, 26%) 100%); -webkit-mask: radial-gradient(circle, transparent 8.4px, #000 9px); mask: radial-gradient(circle, transparent 8.4px, #000 9px); }
+.orb { border-radius: 50%; background: radial-gradient(circle at 50% 30%, #2b2b2d, #070707); }
+.chrome { width: 22px; height: 22px; border-radius: 50%; background: conic-gradient(#fff, #6e6e73, #f5f5f7, #3a3a3c, #d1d1d6, #5a5a5e, #fff); -webkit-mask: radial-gradient(circle, transparent 9.6px, #000 10.2px); mask: radial-gradient(circle, transparent 9.6px, #000 10.2px); animation: spin 1.4s linear infinite; }
+@keyframes spin { to { transform: rotate(1turn); } }
+.ticker { height: 18px; }
+.ticker span { position: absolute; left: 0; top: 0; height: 18px; line-height: 18px; font-size: 12.5px; font-weight: 600; opacity: 0; transform: translateY(6px); transition: transform .4s cubic-bezier(.2,.9,.3,1), opacity .25s ease; }
+.ticker span.on { opacity: 1; transform: none; }
+.ticker span.out { opacity: 0; transform: translateY(-3px); transition: transform .3s ease, opacity .14s ease; }
+.tile { border-radius: 10px; background: linear-gradient(160deg, #2a2a2c, #0e0e0f 60%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.16); }
+.bang { font: 800 13px var(--display); color: var(--amber); }
+.cbtn { all: unset; position: absolute; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform .12s ease, background .15s ease; }
+.cbtn svg { width: 14px; height: 14px; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.cbtn.deny { background: var(--graphite); }
+.cbtn.deny svg { stroke: var(--text); }
+.cbtn.allow { background: var(--text); }
+.cbtn.allow svg { stroke: #000; }
+.cbtn:hover { transform: scale(1.06); }
+.cbtn.allow:hover { background: #fff; }
+.cbtn:active, .cbtn.press { transform: scale(.88); }
+.cbtn:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.code { border-radius: 9px; background: var(--field); font: 12px var(--mono); display: flex; align-items: center; padding: 0 12px; gap: 8px; }
+.code i { font-style: normal; color: var(--text-3); }
+.countdown { height: 2px; border-radius: 1px; background: rgba(255,255,255,.08); overflow: hidden; }
+.countdown b { display: block; height: 100%; background: var(--amber); transform-origin: 0 50%; }
+.eq { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+.eq i { width: 2.2px; height: 12px; border-radius: 2px; background: var(--text); transform-origin: 50% 100%; animation: eq .9s ease-in-out infinite alternate; }
+.eq i:nth-child(2) { animation-duration: .62s; } .eq i:nth-child(3) { animation-duration: .78s; } .eq i:nth-child(4) { animation-duration: .54s; }
+@keyframes eq { from { transform: scaleY(.3); } to { transform: scaleY(1); } }
+.media { display: flex; align-items: center; gap: 12px; }
+.media svg { width: 11px; height: 11px; fill: var(--text); }
+.marquee { width: 130px; overflow: hidden; -webkit-mask: linear-gradient(90deg, #000 80%, transparent); mask: linear-gradient(90deg, #000 80%, transparent); }
+.marquee span { display: inline-block; font-size: 14px; font-weight: 600; animation: marquee 7s linear 1.2s infinite; }
+@keyframes marquee { 0%, 12% { transform: translateX(0); } 88%, 100% { transform: translateX(-46%); } }
+.paused .chrome, .paused .eq i, .paused .marquee span { animation-play-state: paused; }
+.stage-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.seg { display: flex; padding: 3px; border-radius: 999px; background: var(--field); box-shadow: inset 0 0 0 1px var(--hairline); }
+.seg button { all: unset; cursor: pointer; font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 999px; color: var(--text-2); transition: background .2s, color .2s; }
+.seg button[aria-pressed="true"] { background: var(--graphite); color: var(--text); }
+.seg button:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+.stage-hint { font-size: 13px; color: var(--text-3); }
+
+/* quota meters */
+.meters { display: grid; gap: 10px; margin-top: 18px; }
+.meter { display: grid; grid-template-columns: 64px 1fr 44px; align-items: center; gap: 12px; font-size: 13.5px; color: var(--text-2); }
+.meter .track { height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+.meter .track b { display: block; height: 100%; border-radius: 2px; background: var(--text); transform: scaleX(0); transform-origin: 0 50%; transition: transform 1.3s cubic-bezier(.16,1,.3,1); }
+.meter.hot .track b { background: var(--amber); }
+.meter span:last-child { text-align: right; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.meter.hot span:last-child { color: var(--amber); }
+
+/* deck keys */
+.deck { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 6px; margin-top: auto; padding-top: 18px; }
+.key { all: unset; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 12px; color: var(--text-2); }
+.key .cap { position: relative; width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(160deg, #2a2a2c, #0e0e0f 60%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2), 0 3px 0 #000; display: flex; align-items: center; justify-content: center; transition: transform .12s ease, box-shadow .12s ease; }
+.key .cap svg { width: 22px; height: 22px; fill: none; stroke: var(--text); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.key .num { position: absolute; left: -4px; top: -4px; min-width: 15px; height: 15px; border-radius: 5px; background: #1d1d1f; font-size: 10px; font-weight: 600; color: rgba(245,245,247,.75); display: flex; align-items: center; justify-content: center; }
+.key:hover .cap { transform: translateY(-1px); }
+.key:active .cap, .key.press .cap { transform: translateY(3px) scale(.95); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28), 0 0 0 #000; }
+.key:focus-visible .cap { outline: 2px solid var(--amber); outline-offset: 3px; }
+.deck-toast { min-height: 22px; margin-top: 12px; font-size: 13px; color: var(--text-2); opacity: 0; transform: translateY(4px); transition: opacity .25s, transform .25s; }
+.deck-toast.on { opacity: 1; transform: none; }
+.deck-toast b { color: var(--text); font-weight: 600; }
+
+/* nochi playground */
+.pet-stage { margin-top: auto; height: 132px; border-radius: 22px; background: #000; box-shadow: inset 0 0 0 1px var(--hairline-2); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.moods { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.moods button { all: unset; cursor: pointer; font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: var(--field); box-shadow: inset 0 0 0 1px var(--hairline); color: var(--text-2); }
+.moods button[aria-pressed="true"] { background: var(--graphite); color: var(--text); }
+.moods button:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+
+
+/* small mock panels that fill feature cards */
+.mini-panel { margin-top: auto; padding: 10px; border-radius: 18px; background: #000; box-shadow: inset 0 0 0 1px var(--hairline-2); font-size: 13px; }
+.mp-field { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; border-radius: 12px; background: var(--field); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); white-space: nowrap; }
+.mp-orb { flex: none; width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 50% 30%, #2b2b2d, #070707); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+.caret { width: 1px; height: 14px; background: var(--text); animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.mp-esc { margin-left: auto; font-size: 11px; padding: 1px 6px; border-radius: 5px; background: #2b2b2d; color: var(--text-2); }
+.mp-card { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: #111; box-shadow: inset 0 0 0 1px rgba(255,255,255,.16); }
+.mp-card small { display: block; font-size: 11px; font-weight: 600; color: var(--amber); }
+.mp-card b { display: block; font: 600 22px/1.2 var(--display); }
+.mp-card span { font-size: 12px; color: var(--text-2); }
+.mp-btn { flex: none; padding: 6px 14px; border-radius: 999px; background: var(--amber); color: #000 !important; font-weight: 600; font-size: 12px !important; }
+.pr-head { display: flex; align-items: center; gap: 12px; padding: 4px 4px 10px; }
+.pr-ring { flex: none; width: 34px; height: 34px; border-radius: 50%; background: conic-gradient(var(--amber) 0 64%, rgba(255,255,255,.12) 64% 100%); -webkit-mask: radial-gradient(circle, transparent 13.5px, #000 14.5px); mask: radial-gradient(circle, transparent 13.5px, #000 14.5px); }
+.pr-head small { display: block; font-size: 11px; color: var(--text-2); }
+.pr-head b { font: 600 18px var(--display); margin-right: 8px; }
+.pr-head span { font-size: 12px; color: var(--amber); }
+.pr-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.pr-pills span { padding: 6px 2px; border-radius: 10px; background: var(--field); text-align: center; font-size: 10.5px; line-height: 1.35; color: var(--text-3); }
+.pr-pills span b { display: block; color: var(--text-2); font-weight: 600; }
+.pr-pills span.on { box-shadow: inset 0 0 0 1px rgba(255,179,64,.5); }
+.pr-pills span.on b { color: var(--amber); }
+.files { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 14px; }
+.files code { padding: 4px 10px; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 1px var(--hairline); color: var(--text-2); font-size: 12.5px; }
+
+
+
+h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: -.04em; line-height: 1.02; margin: 0; }
+h1 em, h2 em, .statement em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spacing: -.01em; }
+p { margin: 0; }
+code, kbd { font-family: var(--mono); font-size: .88em; }
+kbd { padding: 1px 7px; border-radius: 6px; background: var(--graphite); box-shadow: inset 0 -1px 0 rgba(0,0,0,.5); white-space: nowrap; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+.kicker { font-size: 12.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--text-3); margin-bottom: 18px; }
+.lead { font-size: clamp(17px, 1.7vw, 20px); color: var(--text-2); max-width: 520px; margin-top: 20px; }
+.grain { position: fixed; inset: 0; pointer-events: none; z-index: 60; opacity: .06; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 26px; border-radius: 999px; font-weight: 600; font-size: 16px; text-decoration: none; will-change: transform; }
+.btn-primary { background: var(--text); color: #000; }
+.btn-ghost { background: rgba(22,22,24,.7); color: var(--text); box-shadow: inset 0 0 0 1px var(--hairline-2); backdrop-filter: blur(8px); }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+
+/* top bar (scrolls away; the guide notch owns the top center) */
+.top { position: absolute; top: 0; left: 0; right: 0; z-index: 30; }
+.top .wrap { display: flex; align-items: center; height: 64px; }
+.brand { font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: -.05em; text-decoration: none; }
+.top-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.icon-link { display: flex; color: var(--text-2); }
+
+/* loader: only Nochi's eyes, then the black collapses into the notch */
+#loader { display: none; }
+html.js #loader { display: block; position: fixed; inset: 0; z-index: 80; background: #000; animation: loader-safety .4s 6s forwards; }
+html.js.ready #loader, html.skip-intro #loader { display: none; }
+@keyframes loader-safety { to { opacity: 0; visibility: hidden; } }
+#loader .pet { position: absolute; left: 0; top: 0; line-height: 0; transform-origin: 50% 50%; }
+#loader .skip { position: absolute; bottom: 28px; left: 0; right: 0; text-align: center; font-size: 13px; color: var(--text-3); opacity: 0; }
+
+/* the guide: tini, fixed at the top center for the whole page */
+#guide { position: fixed; top: 0; left: 0; right: 0; height: 0; z-index: 50; }
+html.js #guide { visibility: hidden; }
+html.js.ready #guide { visibility: visible; }
+#guide .island { cursor: default; }
+
+/* hero world */
+.hero { position: relative; height: 100vh; min-height: 640px; overflow: hidden; }
+.world { position: absolute; inset: 0; background:
+  radial-gradient(60% 50% at 50% 0%, rgba(255,255,255,.16), transparent 70%),
+  radial-gradient(40% 40% at 18% 70%, rgba(255,179,64,.16), transparent 70%),
+  radial-gradient(50% 45% at 85% 65%, rgba(110,130,255,.14), transparent 70%),
+  linear-gradient(180deg, #2a2a2e 0%, #141416 55%, #050505 100%); transform-origin: 50% 0%; }
+.world .glow { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; filter: blur(60px); opacity: .35; animation: drift 18s ease-in-out infinite alternate; }
+.world .g1 { left: -10vmax; top: 20%; background: #5b4a2a; }
+.world .g2 { right: -15vmax; top: 30%; background: #2b3557; animation-duration: 23s; }
+@keyframes drift { to { transform: translate(6vmax, -4vmax) scale(1.08); } }
+.taskbar { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; background: rgba(20,20,22,.72); backdrop-filter: blur(12px); box-shadow: inset 0 1px 0 var(--hairline); display: flex; align-items: center; justify-content: center; gap: 10px; }
+.taskbar i { width: 34px; height: 34px; border-radius: 9px; background: rgba(255,255,255,.08); }
+.taskbar i:first-child { background: none; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 8px; }
+.taskbar i:first-child::before, .taskbar i:first-child::after { content: ""; background: rgba(255,255,255,.6); border-radius: 2px; }
+.hero-copy { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: center; padding-top: 40px; }
+.hero h1 { font-size: clamp(54px, 9vw, 132px); }
+.launch-line { margin-top: 20px; font-size: 15px; line-height: 1.5; color: var(--text-2); }
+.launch-line .dot { display: inline-block; vertical-align: middle; margin: -2px 10px 0 0; width: 8px; height: 8px; border-radius: 4px; background: var(--amber); box-shadow: 0 0 10px rgba(255,179,64,.6); }
+.launch-line b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.watch-hint { margin-top: 6px; font-size: 13.5px; color: var(--text-3); }
+.scroll-hint { position: absolute; z-index: 2; bottom: 76px; left: 0; right: 0; text-align: center; font-size: 13px; color: var(--text-3); letter-spacing: .08em; }
+
+/* device reveal: a studio-style display, front-on, with a Windows 11 desktop drawn at 1500 x 844
+   design px and scaled to the screen. The notch on it is a live island; on desktop the camera dives
+   into it and it hands over to the fixed guide. */
+.device-sec { position: relative; overflow: hidden; }
+.device-stage { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 110px 0 50px; perspective: 1800px; }
+.device-copy { text-align: center; position: relative; z-index: 2; }
+.device-sec h2 { font-size: clamp(40px, 5.2vw, 78px); }
+.device-sec .lead { margin: 16px auto 0; }
+.monitor { position: relative; width: min(1040px, 88vw, calc((100vh - 140px) * 1.62)); margin-top: 48px; transform-origin: 50% 15px; }
+.monitor .frame { position: relative; padding: 3px; border-radius: 20px; background: linear-gradient(180deg, #ecedf0 0%, #babcc1 45%, #9a9ca1 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 70px 120px -30px rgba(0,0,0,.85), 0 30px 60px -20px rgba(0,0,0,.6); }
+.monitor .bezel { padding: 12px; border-radius: 17px; background: #0a0a0b; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+.monitor .screen { position: relative; aspect-ratio: 1500 / 844; border-radius: 5px; overflow: hidden; background: #f6e3f4; }
+.monitor .screen::after { content: ""; position: absolute; inset: 0; z-index: 9; pointer-events: none; background: linear-gradient(120deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.05) 28%, rgba(255,255,255,0) 48%); }
+.monitor .neck { width: 16%; height: clamp(36px, 8vw, 90px); margin: 0 auto; background: linear-gradient(90deg, #8e9095 0%, #d8d9dc 22%, #f1f2f4 48%, #c9cbcf 74%, #8a8c91 100%); box-shadow: inset 0 14px 18px -10px rgba(0,0,0,.55); }
+.monitor .foot { position: relative; width: 34%; height: 12px; margin: 0 auto; border-radius: 3px 3px 10px 10px; background: linear-gradient(180deg, #f3f4f6, #b4b6bb 60%, #8d8f94); }
+.monitor .foot::after { content: ""; position: absolute; left: -12%; right: -12%; top: 8px; height: 26px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.6), transparent); z-index: -1; }
+
+/* the desktop (design px, scaled by JS to the screen width) */
+.desk { position: absolute; left: 0; top: 0; width: 1500px; height: 844px; transform-origin: 0 0; font-family: "Segoe UI Variable Text", "Segoe UI", Inter, system-ui, sans-serif; color: #1b1b1f; overflow: hidden;
+  background:
+    radial-gradient(42% 60% at 24% 78%, rgba(255,150,64,.95) 0%, rgba(255,150,64,0) 70%),
+    radial-gradient(38% 55% at 50% 60%, rgba(255,96,140,.85) 0%, rgba(255,96,140,0) 70%),
+    radial-gradient(45% 65% at 78% 70%, rgba(108,92,255,.9) 0%, rgba(108,92,255,0) 70%),
+    radial-gradient(38% 50% at 88% 18%, rgba(64,200,200,.75) 0%, rgba(64,200,200,0) 70%),
+    radial-gradient(40% 45% at 14% 14%, rgba(255,214,120,.8) 0%, rgba(255,214,120,0) 70%),
+    linear-gradient(165deg, #fff1df 0%, #f6e3f4 45%, #dfe6ff 100%); }
+.desk .petal { position: absolute; border-radius: 50%; opacity: .5; background: radial-gradient(closest-side, rgba(255,255,255,.9), rgba(255,255,255,0)); }
+.desk .island { z-index: 7; }
+.desk .win { position: absolute; border-radius: 8px; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,.12), 0 24px 48px -12px rgba(30,20,60,.45), 0 8px 16px -8px rgba(30,20,60,.3); }
+.desk .titlebar { height: 34px; display: flex; align-items: center; gap: 10px; padding: 0 0 0 14px; font-size: 13px; }
+.desk .caps { margin-left: auto; display: flex; height: 100%; }
+.desk .caps i { width: 46px; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 12px; opacity: .7; }
+/* terminal with Claude Code */
+.desk .term-win { left: 64px; top: 150px; width: 620px; height: 460px; background: #0c0c0d; color: #e8e8ea; z-index: 3; }
+.desk .term-win .titlebar { background: #1d1d20; color: #cfcfd4; }
+.desk .tab { display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 12px; margin-top: 8px; border-radius: 6px 6px 0 0; background: #0c0c0d; font-size: 12.5px; }
+.desk .tab b { width: 12px; height: 12px; border-radius: 3px; background: #D97757; }
+.desk .tty { padding: 18px 22px; font: 15px/1.75 "Cascadia Mono", Consolas, monospace; white-space: pre; }
+.desk .tty .dim { color: #8b8b93; }
+.desk .tty .ok { color: #8fd18f; } .desk .tty .no { color: #ff7b72; } .desk .tty .warn { color: #ffb340; }
+.desk .tty .box { display: inline-block; padding: 6px 14px; margin-bottom: 8px; border: 1px solid #D97757; border-radius: 8px; line-height: 1.5; }
+.desk .tty .box em { font-style: normal; color: #D97757; }
+/* browser showing the tini page */
+.desk .browser { left: 650px; top: 66px; width: 780px; height: 470px; background: #f3f3f5; z-index: 2; }
+.desk .browser .titlebar { background: #e6e6ea; }
+.desk .browser .tab { background: #f3f3f5; color: #1b1b1f; }
+.desk .browser .tab b { background: #000; border-radius: 4px; }
+.desk .addr { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; font-size: 13.5px; color: #55555c; }
+.desk .addr span { flex: 1; height: 30px; display: flex; align-items: center; padding: 0 14px; border-radius: 15px; background: #fff; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.desk .page { position: absolute; left: 0; right: 0; top: 78px; bottom: 0; background: radial-gradient(60% 70% at 50% 0%, #3a3a40, #111 70%); color: #f5f5f7; padding: 60px 0 0 96px; }
+.desk .page small { font-size: 11px; letter-spacing: .16em; color: rgba(245,245,247,.45); font-weight: 600; }
+.desk .page h4 { margin: 14px 0 0; font: 600 52px/1.02 Inter, system-ui, sans-serif; letter-spacing: -.04em; }
+.desk .page h4 em { font: italic 400 54px var(--serif); letter-spacing: -.01em; }
+.desk .page .pbtn { display: inline-block; margin-top: 26px; padding: 10px 20px; border-radius: 999px; background: #f5f5f7; color: #000; font: 600 14px Inter, system-ui, sans-serif; }
+/* music player */
+.desk .player { left: 880px; top: 476px; width: 500px; height: 238px; background: rgba(250,250,252,.94); z-index: 4; }
+.desk .player .titlebar { color: #45454c; }
+.desk .pl { display: flex; gap: 22px; padding: 6px 24px 0; }
+.desk .art { flex: none; width: 128px; height: 128px; border-radius: 10px; background: #000; display: flex; align-items: center; justify-content: center; gap: 14px; box-shadow: 0 10px 24px -8px rgba(0,0,0,.5); }
+.desk .art i { width: 13px; height: 24px; border-radius: 7px; background: #f5f5f7; box-shadow: 0 0 8px rgba(255,255,255,.6); }
+.desk .meta { flex: 1; padding-top: 10px; }
+.desk .meta b { display: block; font-size: 19px; font-weight: 600; }
+.desk .meta span { font-size: 14px; color: #6a6a72; }
+.desk .bar { height: 4px; border-radius: 2px; margin-top: 24px; background: rgba(0,0,0,.1); }
+.desk .bar i { display: block; width: 38%; height: 100%; border-radius: 2px; background: #6c5cff; }
+.desk .times { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11.5px; color: #8a8a92; }
+.desk .ctl { display: flex; justify-content: center; align-items: center; gap: 30px; margin-top: 2px; }
+.desk .ctl svg { width: 16px; height: 16px; fill: #1b1b1f; }
+.desk .ctl .pp { width: 40px; height: 40px; border-radius: 20px; background: #1b1b1f; display: flex; align-items: center; justify-content: center; }
+.desk .ctl .pp svg { fill: #fff; }
+/* taskbar */
+.desk .taskbar { position: absolute; left: 0; right: 0; bottom: 0; height: 48px; z-index: 6; background: rgba(240,238,246,.86); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 -1px 0 rgba(0,0,0,.06); display: flex; align-items: center; justify-content: center; gap: 4px; }
+.desk .tbi { position: relative; width: 40px; height: 40px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.desk .tbi.on { background: rgba(255,255,255,.6); }
+.desk .tbi.on::after { content: ""; position: absolute; bottom: 2px; width: 16px; height: 3px; border-radius: 2px; background: #5b5bd6; }
+.desk .tbi.run::after { content: ""; position: absolute; bottom: 2px; width: 6px; height: 3px; border-radius: 2px; background: #8a8a92; }
+.desk .tbi svg { width: 24px; height: 24px; }
+.desk .tray { position: absolute; right: 12px; top: 0; height: 48px; display: flex; align-items: center; gap: 14px; font-size: 12px; color: #1b1b1f; }
+.desk .tray svg { width: 15px; height: 15px; fill: none; stroke: #1b1b1f; stroke-width: 1.6; stroke-linecap: round; }
+.desk .clock { text-align: right; line-height: 1.35; }
+
+/* chapters */
+.chapter { position: relative; }
+.chapter .pin { position: relative; min-height: 100vh; display: flex; align-items: center; padding: 150px 0 80px; }
+.chapter .grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 64px; align-items: center; width: 100%; }
+.chapter h2 { font-size: clamp(38px, 4.4vw, 64px); }
+.demo { position: relative; }
+.panel { border-radius: 24px; background: var(--card); box-shadow: inset 0 0 0 1px var(--hairline); padding: 22px; }
+
+/* today */
+.typebar { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 14px 0 18px; border-radius: 18px; background: var(--field); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); font-size: 17px; white-space: nowrap; overflow: hidden; }
+.typebar .plus { color: var(--text-3); font-size: 20px; }
+.typebar .caret { width: 1.5px; height: 20px; background: var(--text); animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.typebar .send { margin-left: auto; width: 30px; height: 30px; border-radius: 15px; background: var(--text); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+.tasks { margin-top: 16px; display: grid; gap: 4px; }
+.task { display: flex; align-items: center; gap: 14px; height: 48px; padding: 0 16px; border-radius: 14px; background: rgba(255,255,255,.03); font-size: 16px; }
+.task i { width: 18px; height: 18px; border-radius: 9px; box-shadow: inset 0 0 0 1.6px rgba(255,255,255,.45); flex: none; }
+.task span { margin-left: auto; color: var(--text-2); font-size: 14px; }
+.task.new { background: rgba(255,179,64,.08); box-shadow: inset 0 0 0 1px rgba(255,179,64,.25); }
+.task.new span { color: var(--amber); }
+
+/* focus */
+.focus-demo { display: flex; justify-content: center; }
+.focus-ring { position: relative; width: min(380px, 80vw); aspect-ratio: 1; }
+.focus-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.focus-ring circle { fill: none; stroke-width: 10; stroke-linecap: round; }
+.focus-ring .bg { stroke: rgba(255,255,255,.08); }
+.focus-ring .fg { stroke: var(--text); }
+.focus-ring .mid { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.focus-ring .time { font: 600 clamp(48px, 7vw, 80px)/1 var(--display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.focus-ring .label { font-size: 14px; color: var(--text-2); }
+.focus-ring::before { content: ""; position: absolute; inset: 12%; border-radius: 50%; background: radial-gradient(circle, rgba(255,179,64,.22), transparent 70%); filter: blur(30px); opacity: var(--glow, .3); }
+
+/* agent */
+.term { border-radius: 18px; overflow: hidden; background: #0c0c0d; box-shadow: inset 0 0 0 1px var(--hairline-2), 0 40px 80px rgba(0,0,0,.5); font: 14px/1.7 var(--mono); }
+.term .bar { display: flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; background: #161618; color: var(--text-3); font-size: 12px; }
+.term .bar i { width: 10px; height: 10px; border-radius: 5px; background: #3a3a3c; }
+.term .bar span { margin-left: 8px; }
+.term .body { padding: 16px 18px 20px; min-height: 270px; }
+.term .ln { white-space: pre-wrap; }
+html.gsap .term .ln { opacity: .12; transition: opacity .3s; }
+html.gsap .term .ln.on { opacity: 1; }
+.term .dot { color: var(--text-3); }
+.term .ok { color: #8fd18f; }
+.term .warn { color: var(--amber); }
+.term .no { color: #ff7b72; }
+.agents { display: flex; align-items: center; gap: 10px; margin-top: 22px; flex-wrap: wrap; color: var(--text-2); font-size: 14px; }
+.agents .logo { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(160deg, #2a2a2c, #0e0e0f 60%); box-shadow: inset 0 0 0 1px var(--hairline-2); display: flex; align-items: center; justify-content: center; }
+.try { margin-top: 14px; font-size: 14px; color: var(--amber); }
+
+/* gallery */
+.gallery .pin { display: block; }
+.gallery .head { margin-bottom: 40px; }
+.track { display: flex; gap: 20px; padding: 0 24px; width: max-content; }
+.gcard { width: min(440px, 82vw); flex: none; border-radius: 26px; background: var(--card); box-shadow: inset 0 0 0 1px var(--hairline); padding: 26px; display: flex; flex-direction: column; gap: 10px; min-height: 380px; }
+.gcard img { height: auto; border-radius: 14px; }
+.gcard h3 { font-size: 24px; letter-spacing: -.03em; }
+.gcard p { color: var(--text-2); font-size: 15.5px; }
+.gcard .vis { margin-top: auto; }
+.hwrap { overflow: hidden; }
+
+/* sizes */
+.seg { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--field); box-shadow: inset 0 0 0 1px var(--hairline); margin-top: 28px; }
+.seg button { all: unset; cursor: pointer; font-size: 15px; font-weight: 600; padding: 9px 18px; border-radius: 999px; color: var(--text-2); }
+.seg button[aria-pressed="true"] { background: var(--text); color: #000; }
+.seg button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.stage-sizes { height: 210px; }
+
+/* light */
+.light .pin { justify-content: center; text-align: center; }
+.big { font: 700 clamp(96px, 20vw, 300px)/.9 var(--display); letter-spacing: -.07em; font-variant-numeric: tabular-nums; }
+.big small { font-size: .18em; font-weight: 600; letter-spacing: -.02em; color: var(--text-2); vertical-align: top; margin-right: .3em; }
+.big .unit { font-size: .4em; letter-spacing: -.04em; margin-left: .1em; }
+.big-sub { margin-top: 18px; color: var(--text-2); font-size: clamp(16px, 1.6vw, 20px); }
+
+/* privacy */
+.privacy .pin { justify-content: center; }
+.statement { font: 600 clamp(36px, 5.6vw, 84px)/1.08 var(--display); letter-spacing: -.04em; max-width: 1050px; }
+.statement .w { opacity: .14; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 56px; max-width: 1050px; }
+.facts div { color: var(--text-2); font-size: 15px; border-top: 1px solid var(--hairline-2); padding-top: 14px; }
+.facts b { display: block; color: var(--text); margin-bottom: 4px; }
+
+/* faq chat */
+.faq { padding: 140px 0; }
+.chat { max-width: 760px; margin: 48px auto 0; display: grid; gap: 14px; }
+.bubble { max-width: 78%; padding: 14px 18px; border-radius: 22px; font-size: 16.5px; line-height: 1.5; }
+.bubble.q { justify-self: end; background: var(--text); color: #000; border-bottom-right-radius: 6px; font-weight: 500; }
+.bubble.a { justify-self: start; background: var(--card); box-shadow: inset 0 0 0 1px var(--hairline); color: var(--text); border-bottom-left-radius: 6px; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
+.bubble.a .av { width: 36px; height: 24px; border-radius: 0 0 10px 10px; background: #000; box-shadow: inset 0 0 0 1px var(--hairline-2); display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+
+/* finale */
+.finale { padding: 170px 0 120px; text-align: center; }
+.finale h2 { font-size: clamp(48px, 8vw, 120px); }
+.cd { display: flex; justify-content: center; gap: 12px; margin-top: 44px; }
+.cd-unit { min-width: 110px; padding: 18px 14px 14px; border-radius: 22px; background: var(--card); box-shadow: inset 0 0 0 1px var(--hairline); }
+.cd-unit b { display: block; font: 700 56px/1 var(--display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.cd-unit span { display: block; margin-top: 10px; font-size: 11.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); }
+.cd-done { margin-top: 40px; font: 700 34px var(--display); }
+.finale .ctas { justify-content: center; }
+.finale .watch-hint { margin-top: 14px; }
+footer { border-top: 1px solid var(--hairline); padding: 40px 0 60px; color: var(--text-3); font-size: 13.5px; }
+footer nav { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 12px; }
+footer a { color: var(--text-2); text-decoration: none; }
+
+/* split text masks: room for descenders of the italic serif */
+.split-line-mask { padding-bottom: .12em; margin-bottom: -.12em; }
+.live-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--amber); box-shadow: 0 0 10px rgba(255,179,64,.7); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+.sizes-label { margin-top: 14px; font-size: 15px; color: var(--text-2); }
+.sizes-label b { color: var(--text); }
+.task b { font-weight: 400; }
+
+
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+  html.gsap .device-copy { position: absolute; top: 14vh; left: 0; right: 0; }
+  html.gsap .monitor { margin-top: 0; width: min(1040px, 86vw, calc((100vh - 170px) * 1.6)); }
+}
+@media (max-width: 899px) {
+  .wrap { padding: 0 16px; }
+  .chapter .grid { grid-template-columns: 1fr; gap: 36px; }
+  .chapter .pin { min-height: 0; padding: 130px 0 60px; }
+  .gallery .pin { padding-bottom: 40px; }
+  .hwrap { overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+  .gcard { scroll-snap-align: center; min-height: 0; }
+  .track { padding: 0 16px; }
+  .facts { grid-template-columns: 1fr; }
+  .cd-unit { min-width: 0; flex: 1; }
+  .cd-unit b { font-size: 40px; }
+  .bubble { max-width: 92%; }
+  .device-stage { min-height: 0; padding: 120px 0 40px; }
+  .monitor { width: calc(100vw - 32px); margin-top: 36px; }
+  .monitor .frame { padding: 2px; border-radius: 13px; }
+  .monitor .bezel { padding: 6px; border-radius: 11px; }
+  .stage-sizes { height: 220px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.js #loader { display: none; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<div id="loader" aria-hidden="true">
+  <span class="pet"><span class="nochi" data-k="7" data-follow="on"></span></span>
+  <p class="skip">click or scroll to skip</p>
+</div>
+<div id="guide"></div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top">tini</a>
+    <div class="top-right">
+      <a class="icon-link" href="https://github.com/dimas3007/tini" aria-label="GitHub"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <!-- Hero: the world -->
+  <section class="hero" data-guide="pill">
+    <div class="world" aria-hidden="true"><span class="glow g1"></span><span class="glow g2"></span><div class="taskbar"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+    <div class="wrap hero-copy">
+      <p class="kicker">A notch for Windows · free &amp; open source</p>
+      <h1 class="split">A tiny <em>island</em><br>for Windows.</h1>
+      <p class="lead">Your day and your AI agent, in one small black pill at the top of your screen.</p>
+      <div class="ctas">
+        <a class="btn btn-primary magnetic" href="https://github.com/dimas3007/tini"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg><span>Watch on GitHub</span></a>
+        <a class="btn btn-ghost magnetic" href="https://www.threads.net/@iamsetiaji_"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3.5 7.1"/></svg><span>Follow on Threads</span></a>
+      </div>
+      <p class="launch-line"><span class="dot"></span><span data-countdown><span>Launching Oct 30, 19:00 WIB</span> · <b data-cd-inline></b></span><a data-cd-done hidden href="https://github.com/dimas3007/tini/releases">Out now — see Releases →</a></p>
+      <p class="watch-hint">On GitHub, choose Watch → Custom → Releases to get notified.</p>
+    </div>
+    <p class="scroll-hint">Scroll to meet tini ↓</p>
+  </section>
+
+  <!-- Product reveal: the monitor rises, the camera dives into the notch, the notch becomes the guide -->
+  <section class="device-sec" id="device" data-guide="pill">
+    <div class="device-stage">
+      <div class="wrap device-copy">
+        <h2 class="split">It lives on <em>your</em> screen.</h2>
+        <p class="lead">Right at the top edge, where nothing else is. Only 28 px tall when it's quiet, and it gets out of the way when you need the space.</p>
+      </div>
+      <div class="monitor" aria-hidden="true">
+        <div class="frame"><div class="bezel"><div class="screen">
+          <div class="desk" data-desk>
+            <span class="petal" style="left:180px;top:420px;width:520px;height:380px"></span>
+            <span class="petal" style="left:980px;top:300px;width:460px;height:460px"></span>
+            <div class="win browser">
+              <div class="titlebar"><span class="tab"><b></b>tini — a notch for Windows</span><span class="caps"><i>—</i><i>☐</i><i>✕</i></span></div>
+              <div class="addr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#55555c" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg><span>dimas3007.github.io/tini</span></div>
+              <div class="page"><small>A NOTCH FOR WINDOWS</small><h4>A tiny <em>island</em><br>for Windows.</h4><span class="pbtn">Watch on GitHub</span></div>
+            </div>
+            <div class="win term-win">
+              <div class="titlebar"><span class="tab"><b></b>claude — ~/tini</span><span class="caps"><i>—</i><i>☐</i><i>✕</i></span></div>
+              <div class="tty"><span class="box"><em>✻</em> Claude Code   <span class="dim">~/tini</span></span>
+&gt; add dark mode to settings
+<span class="dim">●</span> Read(src/settings.rs)
+<span class="dim">●</span> Edit(src/theme.rs)  <span class="ok">+24</span> <span class="no">−3</span>
+<span class="dim">●</span> Bash(cargo test)  <span class="ok">✓ passed</span>
+<span class="dim">●</span> Bash(git push origin main)
+<span class="warn">  waiting for your OK in tini…</span></div>
+            </div>
+            <div class="win player">
+              <div class="titlebar"><span>Music</span><span class="caps"><i>—</i><i>☐</i><i>✕</i></span></div>
+              <div class="pl"><div class="art"><i></i><i></i></div>
+                <div class="meta"><b>Soft Launch · lo-fi edit</b><span>Nochi &amp; Friends</span><div class="bar"><i></i></div><div class="times"><span>1:12</span><span>3:04</span></div>
+                  <div class="ctl"><svg viewBox="0 0 24 24"><path d="M5 5h3v14H5zM20 5v14L9 12z"/></svg><span class="pp"><svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg></span><svg viewBox="0 0 24 24"><path d="M16 5h3v14h-3zM4 5v14l11-7z"/></svg></div></div></div>
+            </div>
+            <div class="taskbar">
+              <span class="tbi"><svg viewBox="0 0 24 24"><defs><linearGradient id="st" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4cc2ff"/><stop offset="1" stop-color="#0f6cbd"/></linearGradient></defs><path fill="url(#st)" d="M3 3h8.4v8.4H3zM12.6 3H21v8.4h-8.4zM3 12.6h8.4V21H3zM12.6 12.6H21V21h-8.4z"/></svg></span>
+              <span class="tbi"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1b1f" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></span>
+              <span class="tbi"><svg viewBox="0 0 24 24"><path fill="#e8a317" d="M2 6.5A1.5 1.5 0 0 1 3.5 5h5l2 2.2h10A1.5 1.5 0 0 1 22 8.7V18a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 18z"/><path fill="#ffd25e" d="M2 9.5h20V18a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 18z"/></svg></span>
+              <span class="tbi run"><svg viewBox="0 0 24 24"><defs><linearGradient id="gl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#43e0c0"/><stop offset="1" stop-color="#2a6cf0"/></linearGradient></defs><circle cx="12" cy="12" r="9.5" fill="url(#gl)"/><path d="M2.8 12h18.4M12 2.5c2.6 2.6 3.8 6 3.8 9.5S14.6 18.9 12 21.5M12 2.5C9.4 5.1 8.2 8.5 8.2 12s1.2 6.9 3.8 9.5" fill="none" stroke="#fff" stroke-width="1.3" opacity=".85"/></svg></span>
+              <span class="tbi on"><svg viewBox="0 0 24 24"><rect x="2" y="3.5" width="20" height="17" rx="3" fill="#1f1f22"/><path d="M6.5 9l3.5 3-3.5 3M12 15.5h5.5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="tbi run"><svg viewBox="0 0 24 24"><defs><linearGradient id="mu" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff8a5c"/><stop offset="1" stop-color="#d9367a"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#mu)"/><path d="M10 16.5V7.5l7-1.5v9" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8.3" cy="16.6" r="1.9" fill="#fff"/><circle cx="15.3" cy="15.1" r="1.9" fill="#fff"/></svg></span>
+              <div class="tray"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg><svg viewBox="0 0 24 24"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/></svg><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg><svg viewBox="0 0 24 24"><rect x="2.5" y="7" width="17" height="10" rx="2"/><path d="M21.5 10.5v3"/></svg><div class="clock">19:00<br>30/10/2026</div></div>
+            </div>
+          </div>
+        </div></div></div>
+        <div class="neck"></div><div class="foot"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 01 Today -->
+  <section class="chapter" id="today" data-guide="full">
+    <div class="pin"><div class="wrap grid">
+      <div class="copy">
+        <p class="kicker">01 · Today</p>
+        <h2 class="split">Type your day <em>like you talk.</em></h2>
+        <p class="lead">Plain words in, tasks with times out. English and Indonesian, no AI, no account. Or press Win+H and just say it.</p>
+      </div>
+      <div class="demo panel">
+        <div class="typebar"><span class="plus">+</span><span data-type></span><i class="caret"></i><span class="send">↑</span></div>
+        <div class="tasks">
+          <div class="task"><i></i>Weekly report<span>9:00 AM</span></div>
+          <div class="task new" data-drop><i></i>Review PR<span>today</span></div>
+          <div class="task new" data-drop><i></i><b>Team meeting</b><span>tomorrow · 2:00 PM</span></div>
+          <div class="task"><i></i>Pick up laundry<span></span></div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 02 Focus -->
+  <section class="chapter" id="focus" data-guide="focus">
+    <div class="pin"><div class="wrap grid">
+      <div class="copy">
+        <p class="kicker">02 · Focus</p>
+        <h2 class="split">Stay in <em>the zone.</em></h2>
+        <p class="lead"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>P</kbd> starts a pomodoro. The ring and the minutes left stay at the top, and Nochi squints calmly while you work.</p>
+      </div>
+      <div class="demo focus-demo">
+        <div class="focus-ring"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="bg" cx="120" cy="120" r="110"/><circle class="fg" cx="120" cy="120" r="110" pathLength="1" stroke-dasharray="1" stroke-dashoffset=".4" data-ring/></svg>
+          <div class="mid"><span class="time" data-time>15:00</span><span class="label">Focus 2 of 4 · Review PR</span></div></div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 03 Agent -->
+  <section class="chapter" id="agent" data-guide="live">
+    <div class="pin"><div class="wrap grid">
+      <div class="copy">
+        <p class="kicker">03 · Your agent</p>
+        <h2 class="split">Your agent, <em>in the corner of your eye.</em></h2>
+        <p class="lead">Claude Code reports to tini as it works. When it needs permission, the notch asks you, and nothing is ever approved on its own.</p>
+        <p class="try">Try it: answer the card at the top. ↑</p>
+        <div class="agents">
+          <span class="logo" title="Claude Code"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg></span>
+          <span class="logo" title="Codex"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#F5F5F7" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></span>
+          <span class="logo" title="Gemini CLI"><svg width="20" height="20" viewBox="0 0 24 24"><defs><linearGradient id="gg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4285F4"/><stop offset=".55" stop-color="#9B72CB"/><stop offset="1" stop-color="#D96570"/></linearGradient></defs><path fill="url(#gg)" d="M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81"/></svg></span>
+          <span>+ Cursor and any agent that speaks MCP</span>
+        </div>
+      </div>
+      <div class="demo term" aria-label="Claude Code session">
+        <div class="bar"><i></i><i></i><i></i><span>claude — ~/tini</span></div>
+        <div class="body">
+          <div class="ln on">&gt; add dark mode to settings</div>
+          <div class="ln" data-step="1"><span class="dot">●</span> Read(src/settings.rs)</div>
+          <div class="ln" data-step="2"><span class="dot">●</span> Edit(src/theme.rs)  <span class="ok">+24</span> <span class="no">−3</span></div>
+          <div class="ln" data-step="3"><span class="dot">●</span> Bash(cargo test)  <span class="ok">✓ passed</span></div>
+          <div class="ln" data-step="4"><span class="dot">●</span> Bash(git push origin main)</div>
+          <div class="ln" data-step="4" data-answer><span class="warn">  waiting for your OK in tini…</span></div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 04 Everything else: horizontal gallery -->
+  <section class="chapter gallery" id="more" data-guide="music">
+    <div class="pin">
+      <div class="wrap head">
+        <p class="kicker">04 · Everything else</p>
+        <h2 class="split">Small things, <em>one glance away.</em></h2>
+      </div>
+      <div class="hwrap"><div class="track">
+        <article class="gcard"><h3>Now playing</h3><p>Spotify, YouTube or any player. An equalizer while music plays; prev, play and next on hover.</p><div class="vis stage stage-mini" data-island="music" aria-hidden="true"></div></article>
+        <article class="gcard"><h3>Your own Stream Deck</h3><p>Drag any app onto the notch and it's a button. <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>0</kbd> runs them. Press one.</p>
+          <div class="vis"><div class="deck" data-deck>            <button type="button" class="key" data-n="1" data-label="Downloads"><span class="cap"><span class="num">1</span><svg viewBox="0 0 24 24" style="stroke:#35C8B4"><path d="M12 4v11 M7 10l5 5 5-5 M5 20h14"/></svg></span>Downloads</button>
+            <button type="button" class="key" data-n="2" data-label="Terminal"><span class="cap"><span class="num">2</span><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z M7.5 9.5l3 2.5-3 2.5 M12.5 15h4"/></svg></span>Terminal</button>
+            <button type="button" class="key" data-n="3" data-label="Snip"><span class="cap"><span class="num">3</span><svg viewBox="0 0 24 24"><path d="M4 9V4h5 M15 4h5v5 M20 15v5h-5 M9 20H4v-5 M12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg></span>Snip</button>
+            <button type="button" class="key" data-n="4" data-label="Focus 50"><span class="cap"><span class="num">4</span><svg viewBox="0 0 24 24"><path d="M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M12 9v4l2.5 1.5 M10 2h4 M12 2v3"/></svg></span>Focus 50</button>
+            <button type="button" class="key" data-n="5" data-label="Lock"><span class="cap"><span class="num">5</span><svg viewBox="0 0 24 24"><path d="M6 11h12v9H6z M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg></span>Lock</button>
+            <button type="button" class="key" data-label="Drop an app on the notch"><span class="cap" style="background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)"><svg viewBox="0 0 24 24" style="stroke:rgba(245,245,247,.6)"><path d="M12 5v14 M5 12h14"/></svg></span>Add</button></div><p class="deck-toast" data-deck-toast></p></div></article>
+        <article class="gcard"><h3>Smart chips</h3><p>Copy a link or a screenshot, or finish a download, and the pill offers the next step: open, copy, save, show in folder.</p><div class="vis"><img src="assets/shot-chip.png" alt="Screenshot chip with Copy, Save and folder buttons" width="776" height="108" loading="lazy"></div></article>
+        <article class="gcard"><h3>Widgets</h3><p>Prayer times calculated offline with the Kemenag method, and your last copied texts. Each one can be switched off.</p>
+          <div class="vis mini-panel" aria-hidden="true"><div class="pr-head"><span class="pr-ring"></span><div><small>Next prayer · Bandung</small><b>Asr 14:56</b><span>in 42 min</span></div></div><div class="pr-pills"><span><b>Fajr</b>04:06</span><span><b>Dhuhr</b>11:41</span><span class="on"><b>Asr</b>14:56</span><span><b>Maghrib</b>17:47</span><span><b>Isha</b>18:58</span></div></div></article>
+        <article class="gcard"><h3>One shortcut for everything</h3><p><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd>: apps, timers, quick sums, a new Claude Code session, or just a task.</p>
+          <div class="vis mini-panel" aria-hidden="true"><div class="mp-field"><span class="mp-orb"></span>25m review PR<i class="caret"></i><span class="mp-esc">Esc</span></div><div class="mp-card"><div><small>Focus session</small><b>25:00</b><span>review PR</span></div><span class="mp-btn">Start</span></div></div></article>
+        <article class="gcard"><h3>Meet Nochi</h3><p>The eyes in the notch. They follow your cursor and change mood with your day. Hover to make Nochi smile.</p>
+          <div class="vis pet-stage"><span class="nochi" data-k="3"></span></div></article>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- 05 Sizes -->
+  <section class="chapter" id="sizes" data-guide="sizes">
+    <div class="pin"><div class="wrap grid">
+      <div class="copy">
+        <p class="kicker">05 · Never in the way</p>
+        <h2 class="split">Three sizes. <em>Zero clutter.</em></h2>
+        <p class="lead">Pick one and watch the notch at the top change. It also peeks under maximized windows and hides in fullscreen.</p>
+        <div class="seg" role="group" aria-label="Notch size"><button type="button" data-size="peek" aria-pressed="false">Shy</button><button type="button" data-size="pill" aria-pressed="false">Compact</button><button type="button" data-size="full" aria-pressed="true">Full</button></div>
+      </div>
+      <div class="demo">
+        <div class="stage stage-sizes" data-island="sizes" aria-hidden="true"></div>
+        <p class="sizes-label" data-sizes-label></p>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 06 Light -->
+  <section class="chapter light" id="light" data-guide="pill">
+    <div class="pin"><div class="wrap">
+      <p class="kicker">06 · Light</p>
+      <div class="big"><small>under</small><span data-count>15</span><span class="unit">MB</span></div>
+      <p class="big-sub">of RAM in daily use · 0% CPU when idle · native Rust, no browser engine inside</p>
+    </div></div>
+  </section>
+
+  <!-- 07 Privacy -->
+  <section class="chapter privacy" id="privacy" data-guide="peek">
+    <div class="pin"><div class="wrap">
+      <p class="kicker">07 · Privacy</p>
+      <p class="statement" data-words>No account. No telemetry. Your tasks stay in plain files <em>on your PC.</em></p>
+      <div class="facts">
+        <div><b>Claude quota</b><span>The login token is read only to show your limits, and sent only to Anthropic.</span></div>
+        <div><b>Keyboard and mouse</b><span>Global hooks run only while the panel is open.</span></div>
+        <div><b>Clipboard</b><span>Only links and images, never content marked private by password managers.</span></div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- FAQ as a chat with Nochi -->
+  <section class="faq" id="faq" data-guide="ask">
+    <div class="wrap">
+      <p class="kicker" style="text-align:center">Questions</p>
+      <h2 class="split" style="text-align:center;font-size:clamp(40px,5.4vw,76px)">Ask <em>Nochi.</em></h2>
+      <div class="chat">
+        <div class="bubble q">Is it free?</div>
+        <div class="bubble a"><span class="av"><span class="nochi" data-k=".5"></span></span><span>Yes. Free and open source, forever. A Pro version might come later, but it would only add new features.</span></div>
+        <div class="bubble q">Which agents work with it?</div>
+        <div class="bubble a"><span class="av"><span class="nochi" data-k=".5"></span></span><span>Claude Code gets the full live view, permission cards and quota. Codex, Gemini CLI, Cursor and any MCP agent can notify you and ask you questions.</span></div>
+        <div class="bubble q">Will it slow my PC down?</div>
+        <div class="bubble a"><span class="av"><span class="nochi" data-k=".5"></span></span><span>Under 15 MB of RAM in daily use and 0% CPU when idle. The animations run in Windows' own compositor.</span></div>
+        <div class="bubble q">When can I get it?</div>
+        <div class="bubble a"><span class="av"><span class="nochi" data-k=".5"></span></span><span>October 30 at 19:00 WIB. Watch the repo on GitHub and you'll know the moment it's out.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Finale -->
+  <section class="finale" id="launch" data-guide="countdown">
+    <div class="wrap">
+      <h2 class="split">See you on <em style="white-space:nowrap">Oct 30.</em></h2>
+      <div class="cd" data-countdown aria-live="polite">
+        <div class="cd-unit"><b data-cd="d">0</b><span>days</span></div>
+        <div class="cd-unit"><b data-cd="h">0</b><span>hours</span></div>
+        <div class="cd-unit"><b data-cd="m">0</b><span>minutes</span></div>
+      </div>
+      <p class="cd-done" data-cd-done hidden><a href="https://github.com/dimas3007/tini/releases">Out now — see Releases →</a></p>
+      <div class="ctas">
+        <a class="btn btn-primary magnetic" href="https://github.com/dimas3007/tini"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg><span>Watch on GitHub</span></a>
+        <a class="btn btn-ghost magnetic" href="https://www.threads.net/@iamsetiaji_"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3.5 7.1"/></svg><span>Follow on Threads</span></a>
+        <a class="btn btn-ghost magnetic" href="https://trakteer.id/iamsetiaji"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z M17 10h1.5a2.5 2.5 0 0 1 0 5H17 M8 3v3 M12 3v3"/></svg><span>Buy me a coffee on Trakteer</span></a>
+      </div>
+      <p class="watch-hint">On GitHub, choose Watch → Custom → Releases to get notified.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <nav><a href="https://github.com/dimas3007/tini">GitHub</a><a href="https://github.com/dimas3007/tini/discussions">Ideas &amp; questions</a><a href="https://github.com/dimas3007/tini/issues">Report a bug</a><a href="https://www.threads.net/@iamsetiaji_">Threads</a><a href="classic/">Classic page</a></nav>
+    <p>tini is an independent open-source project, not affiliated with or endorsed by Microsoft, Apple, Anthropic, OpenAI or Google, and unrelated to krallin/tini. Claude is a trademark of Anthropic, Codex of OpenAI, Gemini of Google, and Windows of Microsoft. Prayer times are calculated estimates.</p>
+    <p style="margin-top:10px">© 2026 Dimas Setiaji · MIT or Apache-2.0</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/SplitText.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.4/dist/lenis.min.js" defer></script>
+<script src="story.js" defer></script>
+</body>
+</html>

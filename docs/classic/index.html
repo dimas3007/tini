@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tini — a notch for Windows</title>
+<meta name="description" content="tini is a free, open-source dynamic island for Windows: tasks, focus, music, shortcuts, and a live view of your AI agent with approvals you answer from the notch. Native Rust, under 15 MB of RAM.">
+<meta property="og:title" content="tini — a notch for Windows">
+<meta property="og:description" content="Your day and your AI agent, in one small black pill at the top of your screen. Free and open source.">
+<meta property="og:image" content="https://dimas3007.github.io/tini/assets/trailer-poster.jpg">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://dimas3007.github.io/tini/">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23000'/%3E%3Crect x='17' y='20' width='10' height='24' rx='5' fill='%23F5F5F7'/%3E%3Crect x='37' y='20' width='10' height='24' rx='5' fill='%23F5F5F7'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #000;
+  --surface: #0b0b0c;
+  --card: #111113;
+  --field: #161618;
+  --graphite: #2c2c2e;
+  --hairline: rgba(255,255,255,.08);
+  --hairline-2: rgba(255,255,255,.14);
+  --text: #f5f5f7;
+  --text-2: rgba(245,245,247,.62);
+  --text-3: rgba(245,245,247,.38);
+  --amber: #ffb340;
+  --radius: 22px;
+  --display: "Segoe UI Variable Display", "Segoe UI Variable Text", Inter, "SF Pro Display", system-ui, sans-serif;
+  --body: "Segoe UI Variable Text", Inter, "SF Pro Text", system-ui, sans-serif;
+  --mono: "Cascadia Mono", "SF Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+img, video { display: block; max-width: 100%; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+section { padding: 112px 0; border-top: 1px solid var(--hairline); }
+h1, h2, h3 { font-family: var(--display); letter-spacing: -.035em; line-height: 1.05; margin: 0; }
+h1 { font-size: clamp(44px, 7vw, 84px); font-weight: 700; }
+h2 { font-size: clamp(34px, 5vw, 56px); font-weight: 700; }
+h3 { font-size: 21px; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; }
+p { margin: 0; }
+.kicker { font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); margin-bottom: 18px; }
+.lead { font-size: clamp(18px, 2vw, 21px); color: var(--text-2); max-width: 640px; margin-top: 22px; }
+.muted { color: var(--text-2); }
+.amber { color: var(--amber); }
+code, kbd { font-family: var(--mono); font-size: .88em; }
+kbd { padding: 1px 7px; border-radius: 6px; background: var(--graphite); box-shadow: inset 0 -1px 0 rgba(0,0,0,.5); white-space: nowrap; }
+
+/* nav */
+.nav { position: sticky; top: 0; z-index: 10; background: rgba(0,0,0,.72); backdrop-filter: saturate(160%) blur(18px); -webkit-backdrop-filter: saturate(160%) blur(18px); border-bottom: 1px solid var(--hairline); }
+.nav .wrap { display: flex; align-items: center; height: 60px; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: -.04em; text-decoration: none; }
+.brand-mark { width: 30px; height: 18px; border-radius: 0 0 9px 9px; background: #000; box-shadow: 0 0 0 1px var(--hairline-2); display: flex; align-items: center; justify-content: center; gap: 4px; }
+.nav-links { display: flex; gap: 22px; margin-left: 8px; }
+.nav-links a { font-size: 14px; color: var(--text-2); text-decoration: none; }
+.nav-links a:hover { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.icon-link { display: flex; color: var(--text-2); }
+.icon-link:hover { color: var(--text); }
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; gap: 10px; height: 50px; padding: 0 24px; border-radius: 999px; font-weight: 600; font-size: 16px; text-decoration: none; transition: transform .15s ease, background .15s ease; }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--text); color: #000; }
+.btn-primary:hover { background: #fff; }
+.btn-ghost { background: var(--field); color: var(--text); box-shadow: inset 0 0 0 1px var(--hairline-2); }
+.btn-ghost:hover { background: var(--graphite); }
+.btn svg { flex: none; }
+
+/* hero */
+.hero { padding: 72px 0 104px; border-top: 0; overflow: hidden; }
+.hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-2); padding: 6px 12px 6px 8px; border-radius: 999px; background: var(--field); box-shadow: inset 0 0 0 1px var(--hairline); margin-bottom: 26px; }
+.eyebrow .dot { width: 8px; height: 8px; border-radius: 4px; background: var(--amber); }
+.hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.hero-meta { margin-top: 18px; font-size: 14px; color: var(--text-3); }
+.phone { position: relative; width: min(340px, 100%); margin: 0 auto; aspect-ratio: 9 / 16; border-radius: 34px; overflow: hidden; background: #000; box-shadow: 0 0 0 1px var(--hairline-2); }
+.phone video { width: 100%; height: 100%; object-fit: cover; }
+
+/* Nochi: two glowing eyes, drawn by JS as SVG (rounded-rect eyes, ^ ^ when happy) */
+.nochi { display: inline-block; position: relative; line-height: 0; }
+.nochi svg { display: block; overflow: visible; filter: drop-shadow(0 0 1.6px rgba(255,255,255,.75)) drop-shadow(0 0 4px rgba(255,255,255,.3)); }
+
+/* live notch stages */
+.stage { position: relative; overflow: hidden; border-radius: 26px; background: radial-gradient(900px 420px at 50% -10%, #4a4a50 0%, #222225 40%, #0c0c0d 80%, #050505 100%); box-shadow: 0 0 0 1px var(--hairline); }
+.stage-hero { margin-top: 44px; height: 250px; cursor: pointer; }
+.stage-mini { height: 92px; margin-top: auto; }
+.stage-card { margin-top: auto; }
+.island { position: absolute; top: 0; left: 50%; width: 0; height: 0; transform-origin: 0 0; }
+.shape { position: absolute; top: 0; left: 0; translate: -50% 0; background: #000; box-shadow: 0 0 0 .7px rgba(255,255,255,.1); }
+.shape::before, .shape::after { content: ""; position: absolute; top: 0; width: 8px; height: 8px; }
+.shape::before { left: -8px; background: radial-gradient(circle at 0 100%, transparent 7.5px, #000 8px); }
+.shape::after { right: -8px; background: radial-gradient(circle at 100% 100%, transparent 7.5px, #000 8px); }
+.layer { position: absolute; top: 0; left: 0; translate: -50% 0; opacity: 0; transform: translateY(-4px) scale(.96); transition: opacity .2s ease, transform .3s cubic-bezier(.2,.9,.3,1); pointer-events: none; font-family: var(--body); color: var(--text); white-space: nowrap; }
+.layer.on { opacity: 1; transform: none; transition-delay: .08s; pointer-events: auto; }
+.layer > * { position: absolute; }
+.layer .nochi { translate: -50% -50%; }
+.t-kicker { font-size: 11.5px; color: var(--text-2); }
+.t-title { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+.t-strong { font-size: 12.5px; font-weight: 600; }
+.t-dim { font-size: 11px; color: var(--text-3); }
+.ring-sm { width: 12px; height: 12px; border-radius: 50%; background: conic-gradient(var(--text) 0 var(--p, 40%), rgba(255,255,255,.14) var(--p, 40%) 100%); -webkit-mask: radial-gradient(circle, transparent 3.6px, #000 4px); mask: radial-gradient(circle, transparent 3.6px, #000 4px); }
+.ring-lg { width: 22px; height: 22px; border-radius: 50%; background: conic-gradient(var(--text) 0 var(--p, 26%), rgba(255,255,255,.12) var(--p, 26%) 100%); -webkit-mask: radial-gradient(circle, transparent 8.4px, #000 9px); mask: radial-gradient(circle, transparent 8.4px, #000 9px); }
+.orb { border-radius: 50%; background: radial-gradient(circle at 50% 30%, #2b2b2d, #070707); }
+.chrome { width: 22px; height: 22px; border-radius: 50%; background: conic-gradient(#fff, #6e6e73, #f5f5f7, #3a3a3c, #d1d1d6, #5a5a5e, #fff); -webkit-mask: radial-gradient(circle, transparent 9.6px, #000 10.2px); mask: radial-gradient(circle, transparent 9.6px, #000 10.2px); animation: spin 1.4s linear infinite; }
+@keyframes spin { to { transform: rotate(1turn); } }
+.ticker { height: 18px; }
+.ticker span { position: absolute; left: 0; top: 0; height: 18px; line-height: 18px; font-size: 12.5px; font-weight: 600; opacity: 0; transform: translateY(6px); transition: transform .4s cubic-bezier(.2,.9,.3,1), opacity .25s ease; }
+.ticker span.on { opacity: 1; transform: none; }
+.ticker span.out { opacity: 0; transform: translateY(-3px); transition: transform .3s ease, opacity .14s ease; }
+.tile { border-radius: 10px; background: linear-gradient(160deg, #2a2a2c, #0e0e0f 60%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.16); }
+.bang { font: 800 13px var(--display); color: var(--amber); }
+.cbtn { all: unset; position: absolute; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform .12s ease, background .15s ease; }
+.cbtn svg { width: 14px; height: 14px; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.cbtn.deny { background: var(--graphite); }
+.cbtn.deny svg { stroke: var(--text); }
+.cbtn.allow { background: var(--text); }
+.cbtn.allow svg { stroke: #000; }
+.cbtn:hover { transform: scale(1.06); }
+.cbtn.allow:hover { background: #fff; }
+.cbtn:active, .cbtn.press { transform: scale(.88); }
+.cbtn:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.code { border-radius: 9px; background: var(--field); font: 12px var(--mono); display: flex; align-items: center; padding: 0 12px; gap: 8px; }
+.code i { font-style: normal; color: var(--text-3); }
+.countdown { height: 2px; border-radius: 1px; background: rgba(255,255,255,.08); overflow: hidden; }
+.countdown b { display: block; height: 100%; background: var(--amber); transform-origin: 0 50%; }
+.eq { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+.eq i { width: 2.2px; height: 12px; border-radius: 2px; background: var(--text); transform-origin: 50% 100%; animation: eq .9s ease-in-out infinite alternate; }
+.eq i:nth-child(2) { animation-duration: .62s; } .eq i:nth-child(3) { animation-duration: .78s; } .eq i:nth-child(4) { animation-duration: .54s; }
+@keyframes eq { from { transform: scaleY(.3); } to { transform: scaleY(1); } }
+.media { display: flex; align-items: center; gap: 12px; }
+.media svg { width: 11px; height: 11px; fill: var(--text); }
+.marquee { width: 130px; overflow: hidden; -webkit-mask: linear-gradient(90deg, #000 80%, transparent); mask: linear-gradient(90deg, #000 80%, transparent); }
+.marquee span { display: inline-block; font-size: 14px; font-weight: 600; animation: marquee 7s linear 1.2s infinite; }
+@keyframes marquee { 0%, 12% { transform: translateX(0); } 88%, 100% { transform: translateX(-46%); } }
+.paused .chrome, .paused .eq i, .paused .marquee span { animation-play-state: paused; }
+.stage-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.seg { display: flex; padding: 3px; border-radius: 999px; background: var(--field); box-shadow: inset 0 0 0 1px var(--hairline); }
+.seg button { all: unset; cursor: pointer; font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 999px; color: var(--text-2); transition: background .2s, color .2s; }
+.seg button[aria-pressed="true"] { background: var(--graphite); color: var(--text); }
+.seg button:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+.stage-hint { font-size: 13px; color: var(--text-3); }
+
+/* quota meters */
+.meters { display: grid; gap: 10px; margin-top: 18px; }
+.meter { display: grid; grid-template-columns: 64px 1fr 44px; align-items: center; gap: 12px; font-size: 13.5px; color: var(--text-2); }
+.meter .track { height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+.meter .track b { display: block; height: 100%; border-radius: 2px; background: var(--text); transform: scaleX(0); transform-origin: 0 50%; transition: transform 1.3s cubic-bezier(.16,1,.3,1); }
+.meter.hot .track b { background: var(--amber); }
+.meter span:last-child { text-align: right; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.meter.hot span:last-child { color: var(--amber); }
+
+/* deck keys */
+.deck { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 6px; margin-top: auto; padding-top: 18px; }
+.key { all: unset; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 12px; color: var(--text-2); }
+.key .cap { position: relative; width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(160deg, #2a2a2c, #0e0e0f 60%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2), 0 3px 0 #000; display: flex; align-items: center; justify-content: center; transition: transform .12s ease, box-shadow .12s ease; }
+.key .cap svg { width: 22px; height: 22px; fill: none; stroke: var(--text); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.key .num { position: absolute; left: -4px; top: -4px; min-width: 15px; height: 15px; border-radius: 5px; background: #1d1d1f; font-size: 10px; font-weight: 600; color: rgba(245,245,247,.75); display: flex; align-items: center; justify-content: center; }
+.key:hover .cap { transform: translateY(-1px); }
+.key:active .cap, .key.press .cap { transform: translateY(3px) scale(.95); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28), 0 0 0 #000; }
+.key:focus-visible .cap { outline: 2px solid var(--amber); outline-offset: 3px; }
+.deck-toast { min-height: 22px; margin-top: 12px; font-size: 13px; color: var(--text-2); opacity: 0; transform: translateY(4px); transition: opacity .25s, transform .25s; }
+.deck-toast.on { opacity: 1; transform: none; }
+.deck-toast b { color: var(--text); font-weight: 600; }
+
+/* nochi playground */
+.pet-stage { margin-top: auto; height: 132px; border-radius: 22px; background: #000; box-shadow: inset 0 0 0 1px var(--hairline-2); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.moods { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.moods button { all: unset; cursor: pointer; font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: var(--field); box-shadow: inset 0 0 0 1px var(--hairline); color: var(--text-2); }
+.moods button[aria-pressed="true"] { background: var(--graphite); color: var(--text); }
+.moods button:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+
+/* light: count-up */
+.bigstat { margin-top: 34px; font-family: var(--display); font-weight: 700; letter-spacing: -.05em; line-height: 1; font-size: clamp(64px, 9vw, 104px); }
+.bigstat small { font-size: .32em; font-weight: 600; letter-spacing: -.02em; color: var(--text-2); margin-right: .2em; }
+.bigstat .unit { font-size: .55em; margin-left: .16em; }
+.bigstat-sub { margin-top: 8px; color: var(--text-2); font-size: 16px; }
+
+/* scroll reveal */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .8s cubic-bezier(.16,1,.3,1); transition-delay: var(--d, 0ms); }
+.reveal.in { opacity: 1; transform: none; }
+
+
+/* small mock panels that fill feature cards */
+.mini-panel { margin-top: auto; padding: 10px; border-radius: 18px; background: #000; box-shadow: inset 0 0 0 1px var(--hairline-2); font-size: 13px; }
+.mp-field { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; border-radius: 12px; background: var(--field); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); white-space: nowrap; }
+.mp-orb { flex: none; width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 50% 30%, #2b2b2d, #070707); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+.caret { width: 1px; height: 14px; background: var(--text); animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.mp-esc { margin-left: auto; font-size: 11px; padding: 1px 6px; border-radius: 5px; background: #2b2b2d; color: var(--text-2); }
+.mp-card { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: #111; box-shadow: inset 0 0 0 1px rgba(255,255,255,.16); }
+.mp-card small { display: block; font-size: 11px; font-weight: 600; color: var(--amber); }
+.mp-card b { display: block; font: 600 22px/1.2 var(--display); }
+.mp-card span { font-size: 12px; color: var(--text-2); }
+.mp-btn { flex: none; padding: 6px 14px; border-radius: 999px; background: var(--amber); color: #000 !important; font-weight: 600; font-size: 12px !important; }
+.pr-head { display: flex; align-items: center; gap: 12px; padding: 4px 4px 10px; }
+.pr-ring { flex: none; width: 34px; height: 34px; border-radius: 50%; background: conic-gradient(var(--amber) 0 64%, rgba(255,255,255,.12) 64% 100%); -webkit-mask: radial-gradient(circle, transparent 13.5px, #000 14.5px); mask: radial-gradient(circle, transparent 13.5px, #000 14.5px); }
+.pr-head small { display: block; font-size: 11px; color: var(--text-2); }
+.pr-head b { font: 600 18px var(--display); margin-right: 8px; }
+.pr-head span { font-size: 12px; color: var(--amber); }
+.pr-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.pr-pills span { padding: 6px 2px; border-radius: 10px; background: var(--field); text-align: center; font-size: 10.5px; line-height: 1.35; color: var(--text-3); }
+.pr-pills span b { display: block; color: var(--text-2); font-weight: 600; }
+.pr-pills span.on { box-shadow: inset 0 0 0 1px rgba(255,179,64,.5); }
+.pr-pills span.on b { color: var(--amber); }
+.files { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 14px; }
+.files code { padding: 4px 10px; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 1px var(--hairline); color: var(--text-2); font-size: 12.5px; }
+
+/* "never in the way" demo: sizes, a maximized window, fullscreen */
+.stage-sizes { margin-top: auto; height: 170px; }
+.stage-sizes .island { z-index: 2; transition: opacity .35s ease; }
+.mock-win { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: #1b1b1d; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); transform: translateY(102%); transition: transform .6s cubic-bezier(.2,.9,.3,1); z-index: 1; }
+.mock-win::before { content: ""; display: block; height: 30px; background: #26262a; border-bottom: 1px solid rgba(255,255,255,.08); }
+.mock-win::after { content: "— ☐ ✕"; position: absolute; right: 14px; top: 7px; font-size: 12px; letter-spacing: 6px; color: var(--text-3); }
+.mock-win.on { transform: none; }
+.mock-fs { position: absolute; inset: 0; background: linear-gradient(135deg, #1f2b47, #0a0d16); opacity: 0; transition: opacity .4s ease; z-index: 3; display: flex; align-items: center; justify-content: center; }
+.mock-fs::before { content: ""; width: 0; height: 0; border-left: 22px solid rgba(255,255,255,.7); border-top: 13px solid transparent; border-bottom: 13px solid transparent; margin-left: 6px; }
+.mock-fs.on { opacity: 1; }
+.sizes-label { margin-top: 12px; min-height: 22px; font-size: 14px; color: var(--text-2); }
+.sizes-label b { color: var(--text); font-weight: 600; }
+
+
+/* pre-launch: countdown and watch */
+[hidden] { display: none !important; }
+.launch-line { margin-top: 18px; font-size: 15px; line-height: 1.5; color: var(--text-2); }
+.launch-line .dot { display: inline-block; vertical-align: middle; margin: -2px 10px 0 0; width: 8px; height: 8px; border-radius: 4px; background: var(--amber); box-shadow: 0 0 10px rgba(255,179,64,.6); }
+.launch-line b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.launch-line a { color: var(--text); font-weight: 600; }
+.watch-hint { margin-top: 8px; font-size: 13.5px; color: var(--text-3); }
+.cd { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.cd-unit { min-width: 92px; padding: 16px 12px 12px; border-radius: 18px; background: var(--field); box-shadow: inset 0 0 0 1px var(--hairline); text-align: center; }
+.cd-unit b { display: block; font: 700 44px/1 var(--display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.cd-unit span { display: block; margin-top: 8px; font-size: 11.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
+.card .cd-done { font-family: var(--display); font-size: 28px; font-weight: 700; letter-spacing: -.02em; color: var(--text); margin: 4px 0 6px; }
+.cd-done a { color: var(--text); }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+.facts { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 10px; color: var(--text-2); }
+.facts li::before { content: "✓"; color: var(--text); margin-right: 10px; }
+
+/* agents */
+.agent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 56px; }
+.card { background: var(--card); border-radius: var(--radius); box-shadow: inset 0 0 0 1px var(--hairline); padding: 28px; display: flex; flex-direction: column; gap: 12px; }
+.card p { color: var(--text-2); font-size: 16px; }
+.shot { margin-top: auto; padding-top: 18px; }
+.shot img { width: 100%; height: auto; filter: drop-shadow(0 18px 40px rgba(0,0,0,.6)); }
+.mcp { margin-top: 16px; display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; }
+.logos { display: flex; gap: 12px; }
+.logo { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(160deg, #2a2a2c, #0e0e0f 60%); box-shadow: inset 0 0 0 1px var(--hairline-2); display: flex; align-items: center; justify-content: center; }
+.logo-more { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tools code { padding: 4px 10px; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 1px var(--hairline); color: var(--text-2); font-size: 13px; }
+
+/* features */
+.feat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 56px; }
+.feat-grid .wide { grid-column: span 2; }
+.feat-icon { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(160deg, #2a2a2c, #0e0e0f 60%); box-shadow: inset 0 0 0 1px var(--hairline-2); display: flex; align-items: center; justify-content: center; }
+.feat-icon svg { width: 20px; height: 20px; stroke: var(--text); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* light */
+.light-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 56px; align-items: center; }
+.taskman { background: #1c1c1e; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px var(--hairline-2), 0 30px 80px rgba(0,0,0,.5); font-family: "Segoe UI", var(--body); font-size: 14px; }
+.taskman-bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #202022; border-bottom: 1px solid var(--hairline); font-size: 13px; color: var(--text-2); }
+.taskman table { width: 100%; border-collapse: collapse; }
+.taskman th { text-align: right; font-weight: 400; font-size: 12px; color: var(--text-2); padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
+.taskman th:first-child, .taskman td:first-child { text-align: left; }
+.taskman td { white-space: nowrap; text-align: right; padding: 12px 16px; border-bottom: 1px solid var(--hairline); font-variant-numeric: tabular-nums; }
+.taskman tr:last-child td { border-bottom: 0; }
+.taskman td.mem { background: rgba(255,179,64,.12); color: var(--text); font-weight: 600; }
+.proc { display: flex; align-items: center; gap: 10px; }
+.proc i { width: 18px; height: 11px; border-radius: 0 0 6px 6px; background: #000; box-shadow: 0 0 0 1px var(--hairline-2); }
+.proc small { color: var(--text-3); margin-left: 4px; white-space: normal; }
+.caption { font-size: 13px; color: var(--text-3); margin-top: 14px; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+.pills span { font-size: 14px; padding: 6px 14px; border-radius: 999px; background: var(--field); box-shadow: inset 0 0 0 1px var(--hairline); color: var(--text-2); }
+
+/* settings */
+.settings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 40px; margin-top: 48px; }
+.setting { display: flex; justify-content: space-between; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--hairline); }
+.setting b { font-weight: 600; }
+.setting span { color: var(--text-2); text-align: right; font-size: 15px; }
+
+/* download */
+.dl { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 56px; }
+.dl-main { padding: 36px; }
+.dl-main .btn { align-self: flex-start; margin-top: 10px; }
+.dl-facts { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--text-2); font-size: 14px; margin-top: 6px; }
+.dl-facts span::before { content: "✓ "; color: var(--text); }
+.steps { counter-reset: s; list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-direction: column; gap: 14px; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 12px; color: var(--text-2); font-size: 16px; }
+.steps li::before { content: counter(s); width: 26px; height: 26px; border-radius: 13px; background: var(--graphite); color: var(--text); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.smartscreen { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.ss { border-radius: 14px; overflow: hidden; background: #0f5aa8; color: #fff; font-family: "Segoe UI", var(--body); padding: 22px 22px 18px; min-height: 230px; display: flex; flex-direction: column; box-shadow: 0 0 0 1px var(--hairline); }
+.ss h4 { margin: 0 0 12px; font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+.ss p { font-size: 13.5px; line-height: 1.45; opacity: .92; }
+.ss .meta { font-size: 13px; margin-top: 10px; line-height: 1.6; }
+.ss .row { margin-top: auto; display: flex; justify-content: flex-end; gap: 8px; padding-top: 16px; }
+.ss .b { padding: 7px 18px; border: 1px solid rgba(255,255,255,.7); font-size: 13px; }
+.ss .b.hl { background: #fff; color: #0f5aa8; border-color: #fff; font-weight: 600; outline: 3px solid var(--amber); outline-offset: 2px; }
+.ss .more { text-decoration: underline; font-size: 13.5px; outline: 3px solid var(--amber); outline-offset: 3px; border-radius: 2px; align-self: flex-start; margin-top: 8px; }
+.ss-label { font-size: 14px; color: var(--text-2); margin-top: 10px; }
+.trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+
+/* privacy & faq */
+.privacy { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 48px; }
+.faq { margin-top: 40px; border-top: 1px solid var(--hairline); }
+.faq details { border-bottom: 1px solid var(--hairline); padding: 22px 0; }
+.faq summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 20px; font-family: var(--display); font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-size: 26px; font-weight: 400; color: var(--text-2); transition: rotate .2s; }
+.faq details[open] summary::after { rotate: 45deg; }
+.faq details p { color: var(--text-2); margin-top: 12px; max-width: 760px; }
+
+/* support & note */
+.support { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.note { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: start; margin-top: 8px; }
+.avatar { width: 72px; height: 72px; border-radius: 22px; background: #000; box-shadow: inset 0 0 0 1px var(--hairline-2); display: flex; align-items: center; justify-content: center; gap: 7px; }
+.note blockquote { margin: 0; font-family: var(--display); font-size: clamp(20px, 2.4vw, 26px); line-height: 1.4; letter-spacing: -.02em; }
+.note cite { display: block; margin-top: 16px; font-style: normal; color: var(--text-2); font-size: 15px; }
+
+footer { border-top: 1px solid var(--hairline); padding: 48px 0 64px; color: var(--text-3); font-size: 14px; }
+footer .wrap { display: flex; flex-direction: column; gap: 14px; }
+footer nav { display: flex; flex-wrap: wrap; gap: 18px; }
+footer a { color: var(--text-2); text-decoration: none; }
+footer a:hover { color: var(--text); }
+
+@media (max-width: 920px) {
+  .hero-grid, .light-grid, .dl, .mcp { grid-template-columns: 1fr; }
+  .agent-grid, .feat-grid, .trust { grid-template-columns: 1fr 1fr; }
+  .feat-grid .wide { grid-column: span 2; }
+  .nav-links { display: none; }
+}
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; }
+  .taskman th, .taskman td { padding: 10px 10px; }
+  section { padding: 80px 0; }
+  .agent-grid, .feat-grid, .trust, .privacy, .settings-grid, .smartscreen { grid-template-columns: 1fr; }
+  .feat-grid .wide { grid-column: auto; }
+  .stage-hero { height: 190px; }
+  .note { grid-template-columns: 1fr; }
+  .dl-main { padding: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="tini"><span class="brand-mark"><span class="nochi" data-k=".42"></span></span>tini</a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#agents">Agents</a>
+      <a href="#features">Features</a>
+      <a href="#light">Light</a>
+      <a href="#launch">Launch</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-right">
+      <a class="icon-link" href="https://github.com/dimas3007/tini" aria-label="GitHub"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow"><span class="dot"></span><span>Free &amp; open source · for Windows 11</span></div>
+        <h1>A tiny dynamic island for Windows.</h1>
+        <p class="lead">Your day and your AI agent, in one small black pill at the top of your screen. Tasks, focus, music and shortcuts, plus a live view of what Claude Code is doing, with approvals you answer right from the notch.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="https://github.com/dimas3007/tini"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg><span>Watch on GitHub</span></a>
+          <a class="btn btn-ghost" href="https://www.threads.net/@iamsetiaji_"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3.5 7.1"/></svg><span>Follow on Threads</span></a>
+        </div>
+        <p class="launch-line"><span class="dot"></span><span data-countdown><span>Launching Oct 30, 19:00 WIB</span> · <b data-cd-inline></b></span><a data-cd-done hidden href="https://github.com/dimas3007/tini/releases">Out now — see Releases →</a></p>
+        <p class="watch-hint">On GitHub, choose Watch → Custom → Releases to get notified.</p>
+        <p class="hero-meta">Windows 11, 64-bit · no admin needed · under 15 MB of RAM</p>
+        <div class="stage stage-hero" id="demo" role="button" tabindex="0" aria-label="tini notch demo: click for the next state"></div>
+        <div class="stage-bar">
+          <div class="seg" role="group" aria-label="Notch size">
+            <button type="button" data-size="peek" aria-pressed="false">Shy</button>
+            <button type="button" data-size="pill" aria-pressed="true">Compact</button>
+            <button type="button" data-size="full" aria-pressed="false">Full</button>
+          </div>
+          <span class="stage-hint">Click the notch, or let it play.</span>
+        </div>
+      </div>
+      <div class="phone">
+        <video src="../assets/trailer.mp4" poster="../assets/trailer-poster.jpg" autoplay muted loop playsinline preload="metadata" aria-label="tini trailer"></video>
+      </div>
+    </div>
+  </section>
+
+  <!-- Agents -->
+  <section id="agents">
+    <div class="wrap">
+      <p class="kicker">For people who work with AI agents</p>
+      <h2>Connect your agent.</h2>
+      <p class="lead">Claude Code reports to tini through hooks, so you can watch it work and answer it without leaving the window you're in. Any agent that speaks MCP can use tini too.</p>
+      <div class="agent-grid">
+        <div class="card">
+          <h3>See what it's doing</h3>
+          <p>Live activity at the top of your screen: “Editing auth.ts”, “Running tests”. When it's done, a chip with a Review button. The Agent tab lists every session and your Claude 5-hour and weekly quota.</p>
+          <div class="stage stage-mini" data-island="live" aria-hidden="true"></div>
+          <div class="meters" data-meters>
+            <div class="meter"><span>Context</span><span class="track"><b data-v=".62"></b></span><span>124k</span></div>
+            <div class="meter"><span>5-hour</span><span class="track"><b data-v=".45"></b></span><span>45%</span></div>
+            <div class="meter hot"><span>Weekly</span><span class="track"><b data-v=".84"></b></span><span>84%</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Approve without alt+tab</h3>
+          <p>A permission request becomes a card with the exact command, ✕ and ✓, and an amber countdown. tini never approves anything on its own; if you don't answer, Claude falls back to its own dialog.</p>
+          <div class="stage stage-card" data-island="card"></div>
+          <p class="caption">Try it: allow or deny.</p>
+        </div>
+        <div class="card">
+          <h3>Answer its questions</h3>
+          <p>Multiple-choice questions and plan approvals become buttons in the notch. Want to type a free answer instead? “In app” sends it back to the chat.</p>
+          <div class="shot"><img src="../assets/shot-ask.png" alt="Claude asks: Which branch? with main, dev and Skip" width="756" height="398" loading="lazy"></div>
+        </div>
+      </div>
+      <div class="card mcp" style="margin-top:16px">
+        <div class="logos">
+          <div class="logo" title="Claude Code"><svg width="30" height="30" viewBox="0 0 24 24"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg></div>
+          <div class="logo" title="Codex"><svg width="30" height="30" viewBox="0 0 24 24"><path fill="#F5F5F7" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg></div>
+          <div class="logo" title="Gemini CLI"><svg width="30" height="30" viewBox="0 0 24 24"><defs><linearGradient id="gg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4285F4"/><stop offset=".55" stop-color="#9B72CB"/><stop offset="1" stop-color="#D96570"/></linearGradient></defs><path fill="url(#gg)" d="M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81"/></svg></div>
+        </div>
+        <div>
+          <h3>Claude Code, Codex, Gemini CLI, Cursor, and any MCP agent</h3>
+          <p>Run <code>notch-bridge mcp</code> as an MCP server and your agent can notify you, ask a quick question, request approval before something risky, report progress, and add or tick off your tasks. It works in the Claude desktop app's chat too. Agents can't answer their own cards or read your clipboard.</p>
+          <div class="tools"><code>notify</code><code>ask_user</code><code>request_approval</code><code>progress</code><code>add_task</code><code>complete_task</code><code>get_status</code></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="wrap">
+      <p class="kicker">Productivity</p>
+      <h2>Everything you glance at, in one pill.</h2>
+      <div class="feat-grid">
+        <div class="card wide">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z M8.5 12.2l2.4 2.4 4.8-5"/></svg></div>
+          <h3>Type your day like you talk</h3>
+          <p>“review PR, then team meeting at 2pm tomorrow” becomes two tasks with the right times. English and Indonesian, no AI, no account. Press <kbd>Win</kbd>+<kbd>H</kbd> to dictate instead.</p>
+          <div class="shot"><img src="../assets/shot-today.png" alt="Today panel with tasks, times and a progress ring" width="880" height="548" loading="lazy"></div>
+        </div>
+        <div class="card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z"/></svg></div>
+          <h3>Your own Stream Deck</h3>
+          <p>Buttons for apps, key combos, commands and text snippets. Drag any app onto the notch to add it. <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>0</kbd> runs them without opening tini.</p>
+          <div class="deck" data-deck>
+            <button type="button" class="key" data-n="1" data-label="Downloads"><span class="cap"><span class="num">1</span><svg viewBox="0 0 24 24" style="stroke:#35C8B4"><path d="M12 4v11 M7 10l5 5 5-5 M5 20h14"/></svg></span>Downloads</button>
+            <button type="button" class="key" data-n="2" data-label="Terminal"><span class="cap"><span class="num">2</span><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z M7.5 9.5l3 2.5-3 2.5 M12.5 15h4"/></svg></span>Terminal</button>
+            <button type="button" class="key" data-n="3" data-label="Snip"><span class="cap"><span class="num">3</span><svg viewBox="0 0 24 24"><path d="M4 9V4h5 M15 4h5v5 M20 15v5h-5 M9 20H4v-5 M12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg></span>Snip</button>
+            <button type="button" class="key" data-n="4" data-label="Focus 50"><span class="cap"><span class="num">4</span><svg viewBox="0 0 24 24"><path d="M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M12 9v4l2.5 1.5 M10 2h4 M12 2v3"/></svg></span>Focus 50</button>
+            <button type="button" class="key" data-n="5" data-label="Lock"><span class="cap"><span class="num">5</span><svg viewBox="0 0 24 24"><path d="M6 11h12v9H6z M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg></span>Lock</button>
+            <button type="button" class="key" data-label="Drop an app on the notch"><span class="cap" style="background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)"><svg viewBox="0 0 24 24" style="stroke:rgba(245,245,247,.6)"><path d="M12 5v14 M5 12h14"/></svg></span>Add</button>
+          </div>
+          <p class="deck-toast" data-deck-toast></p>
+        </div>
+        <div class="card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M12 9v4l2.5 1.5 M10 2h4 M12 2v3"/></svg></div>
+          <h3>Pomodoro in the notch</h3>
+          <p><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>P</kbd> starts a focus session. A small ring and the minutes left stay in view, and Nochi squints calmly while you work.</p>
+          <div class="shot"><img src="../assets/shot-focus.png" alt="Focus tab ready for a 25-minute session" width="880" height="324" loading="lazy"></div>
+        </div>
+        <div class="card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M16 16l4.5 4.5"/></svg></div>
+          <h3>One shortcut for everything</h3>
+          <p><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd> opens a command bar: apps and folders, timers like <code>25m review PR</code>, quick sums, a new Claude Code session, a web search, or just a task.</p>
+          <div class="mini-panel" aria-hidden="true">
+            <div class="mp-field"><span class="mp-orb"></span>25m review PR<i class="caret"></i><span class="mp-esc">Esc</span></div>
+            <div class="mp-card"><div><small>Focus session</small><b>25:00</b><span>review PR</span></div><span class="mp-btn">Start</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13 M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0z M20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></svg></div>
+          <h3>Now playing</h3>
+          <p>Spotify, YouTube or any player that uses Windows media controls. A small equalizer while music plays; hover for the title and prev / play / next.</p>
+          <div class="stage stage-mini" data-island="music" aria-hidden="true"></div>
+        </div>
+        <div class="card wide">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M9 9h10v11H9z M5 15V4h10"/></svg></div>
+          <h3>Smart chips: one next step</h3>
+          <p>Copy a link or a screenshot, or finish a download, and the pill offers the obvious next step: open, copy again, save as PNG, add as a task, show in folder. Content that password managers mark as private is never read.</p>
+          <div class="shot"><img src="../assets/shot-chip.png" alt="Screenshot chip with Copy, Save and folder buttons" width="776" height="108" loading="lazy"></div>
+        </div>
+        <div class="card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M3 5h8v14H3z M13 5h8v6h-8z M13 13h8v6h-8z"/></svg></div>
+          <h3>Widgets</h3>
+          <p>Prayer times calculated offline with the Kemenag method, with a soft chime or the full adhan. Clipboard history of your last copied texts, kept in memory only. Each widget can be switched off.</p>
+          <div class="mini-panel" aria-hidden="true">
+            <div class="pr-head"><span class="pr-ring"></span><div><small>Next prayer · Bandung</small><b>Asr 14:56</b><span>in 42 min</span></div></div>
+            <div class="pr-pills"><span><b>Fajr</b>04:06</span><span><b>Dhuhr</b>11:41</span><span class="on"><b>Asr</b>14:56</span><span><b>Maghrib</b>17:47</span><span><b>Isha</b>18:58</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M8 9.5v5 M16 9.5v5"/></svg></div>
+          <h3>Meet Nochi</h3>
+          <p>Two glowing eyes that live in the notch. They blink, follow your cursor, read along while your agent works and hop when you finish something. Hover to make Nochi smile, click to make it hop.</p>
+          <div class="pet-stage"><span class="nochi" data-k="3"></span></div>
+          <div class="moods" role="group" aria-label="Moods" data-moods>
+            <button type="button" data-mood="idle" aria-pressed="true">Idle</button><button type="button" data-mood="happy" aria-pressed="false">Happy</button><button type="button" data-mood="focused" aria-pressed="false">Focused</button><button type="button" data-mood="alert" aria-pressed="false">Alert</button><button type="button" data-mood="zen" aria-pressed="false">Zen</button><button type="button" data-mood="sleepy" aria-pressed="false">Sleepy</button>
+          </div>
+        </div>
+        <div class="card wide">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M4 7h16 M7 12h10 M10 17h4"/></svg></div>
+          <h3>Never in the way</h3>
+          <p>Three sizes: Shy, Compact and Full. It peeks under maximized windows, hides in fullscreen games and presentations, and stays on the monitor you put it on.</p>
+          <div class="stage stage-sizes" data-island="sizes" aria-hidden="true"></div>
+          <p class="sizes-label" data-sizes-label></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Light -->
+  <section id="light">
+    <div class="wrap light-grid">
+      <div>
+        <p class="kicker">Performance</p>
+        <h2>So light you'll forget it's running.</h2>
+        <p class="lead">Native Rust on Win32 and Windows.UI.Composition. Animations run in DWM, the compositor that already draws your desktop, so tini itself mostly sleeps. Nothing polls.</p>
+        <div class="bigstat"><small>under</small><span class="count" data-to="15">15</span><span class="unit">MB</span></div>
+        <p class="bigstat-sub">of RAM in daily use · 0% CPU when idle</p>
+        <div class="pills"><span>No Electron</span><span>No browser engine</span><span>No polling</span><span>No telemetry</span></div>
+      </div>
+      <div>
+        <!-- Measured 2026-10-25 on the installed release build in daily use (Task Manager "Memory" =
+             private working set): 13 MB, CPU 0% when idle. Re-measure before each release. -->
+        <div class="taskman" role="figure" aria-label="Task Manager style table">
+          <div class="taskman-bar">Task Manager · Processes</div>
+          <table>
+            <thead><tr><th>Name</th><th>CPU</th><th>Memory</th></tr></thead>
+            <tbody>
+              <tr><td><span class="proc"><i></i>tini <small>in daily use, idle</small></span></td><td>0%</td><td class="mem">13 MB</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="caption">Installed release build on a Core i3-10105F, in daily use. “Memory” is Task Manager's Memory column (private working set). It stays under 15 MB.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Customize -->
+  <section id="customize">
+    <div class="wrap">
+      <p class="kicker">Settings</p>
+      <h2>Make it yours.</h2>
+      <div class="settings-grid">
+        <div class="setting"><b>Notch size</b><span>Shy · Compact · Full</span></div>
+        <div class="setting"><b>Peek under windows</b><span>On / off</span></div>
+        <div class="setting"><b>Hide in fullscreen</b><span>On / off</span></div>
+        <div class="setting"><b>Smart chips</b><span>On / off</span></div>
+        <div class="setting"><b>Monitor</b><span>Stay · Follow app</span></div>
+        <div class="setting"><b>Start with Windows</b><span>On / off</span></div>
+        <div class="setting"><b>Focus</b><span>Focus, short and long break lengths</span></div>
+        <div class="setting"><b>Widgets</b><span>Prayer times · Clipboard</span></div>
+        <div class="setting"><b>Sounds</b><span>Chime · Adhan · Off</span></div>
+        <div class="setting"><b>Agents</b><span>Claude Code hooks · Claude app</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download -->
+  <section id="launch">
+    <div class="wrap">
+      <p class="kicker">Launch</p>
+      <h2>Launching Oct 30.</h2>
+      <p class="lead">The first release goes out on October 30 at 19:00 WIB. Watch the repo on GitHub and you'll get a notification the moment it's out.</p>
+      <div class="dl">
+        <div class="card dl-main">
+          <div class="cd" data-countdown aria-live="polite">
+            <div class="cd-unit"><b data-cd="d">0</b><span>days</span></div>
+            <div class="cd-unit"><b data-cd="h">0</b><span>hours</span></div>
+            <div class="cd-unit"><b data-cd="m">0</b><span>minutes</span></div>
+          </div>
+          <p class="cd-done" data-cd-done hidden><a href="https://github.com/dimas3007/tini/releases">Out now — see Releases →</a></p>
+          <div class="ctas">
+            <a class="btn btn-primary" href="https://github.com/dimas3007/tini"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg><span>Watch on GitHub</span></a>
+            <a class="btn btn-ghost" href="https://www.threads.net/@iamsetiaji_"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3.5 7.1"/></svg><span>Follow on Threads</span></a>
+          </div>
+          <p class="caption">On GitHub, choose Watch → Custom → Releases to get notified.</p>
+        </div>
+        <div class="card" style="justify-content:center">
+          <h3>What you'll get</h3>
+          <ul class="facts">
+            <li>A small installer for Windows 11, 64-bit (Windows 10 may work)</li>
+            <li>Installs for your user only, no admin needed</li>
+            <li>Free and open source, MIT or Apache-2.0</li>
+            <li>Under 15 MB of RAM in daily use</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 style="margin-top:56px">Why you can trust it</h3>
+      <div class="trust">
+        <div class="card"><h3>Open source</h3><p>Every line is on GitHub under MIT or Apache-2.0. Read it, build it yourself, or ask your agent to review it.</p></div>
+        <div class="card"><h3>Built in public</h3><p>Releases will be built by GitHub Actions from the public source, in the open, so you can see exactly what goes into every download.</p></div>
+        <div class="card"><h3>Yours to remove</h3><p>Installs for your user only: no admin, no service, no driver. Your tasks and settings stay in plain files on your PC.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Privacy -->
+  <section id="privacy">
+    <div class="wrap">
+      <p class="kicker">Privacy</p>
+      <h2>Local-first. No account, no analytics.</h2>
+      <div class="privacy">
+        <div class="card"><h3>Your data stays on your PC</h3><p>Tasks, Deck buttons and settings are plain files in <code>%APPDATA%\Notch</code>. No account, no telemetry, no update check.</p>
+          <div class="files" aria-hidden="true"><code>tasks.json</code><code>deck.json</code><code>settings.ini</code></div></div>
+        <div class="card"><h3>Claude quota, only to Anthropic</h3><p>To show your 5-hour and weekly limits, tini reads Claude Code's login token from <code>~/.claude/.credentials.json</code> into memory and sends it only to Anthropic (<code>api.anthropic.com</code>, and <code>platform.claude.com</code> to renew an expired token). It's never logged.</p></div>
+        <div class="card"><h3>Keyboard and mouse</h3><p>Global keyboard and mouse hooks are active only while the panel is open, so tini can close it when you click elsewhere or press Esc.</p></div>
+        <div class="card"><h3>Clipboard</h3><p>Read only for links and images (and recent texts for the optional history), never content marked private by password managers, and not at all when Smart chips are off. History lives in memory only.</p></div>
+        <div class="card"><h3>Location, only when you ask</h3><p>Prayer times are computed offline. “Use my location” asks Windows for your position once, only when you click it, and the coordinates stay in your settings file.</p></div>
+        <div class="card"><h3>Agent events stay local</h3><p>Claude Code hooks send short event summaries to tini over a named pipe that only your Windows user can open. Never over the network.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <p class="kicker">FAQ</p>
+      <h2>Questions</h2>
+      <div class="faq">
+        <details><summary>Is it free?</summary><p>Yes. Everything tini does today is free and open source, forever. A Pro version may come later, but it will only add new features; nothing that's free now will move behind a paywall.</p></details>
+        <details><summary>Which agents does it work with?</summary><p>Claude Code gets the full experience through hooks: live activity, permission and question cards, plan approval and quota meters. Any MCP-capable agent (Codex, Gemini CLI, Cursor, the Claude desktop app's chat, …) can notify you, ask questions, request approval, report progress and manage tasks.</p></details>
+        <details><summary>Will it slow down my PC?</summary><p>No. In daily use it stays under 15 MB of RAM and sits at 0% CPU when idle, and animations run in Windows' own compositor. See the numbers above.</p></details>
+        <details><summary>Does it need the internet?</summary><p>No. The only network request is the optional Claude quota meter, which talks to Anthropic. Prayer times are calculated offline.</p></details>
+        <details><summary>When can I download it?</summary><p>On October 30 at 19:00 WIB. Watch the repo on GitHub (Watch → Custom → Releases) or follow @iamsetiaji_ on Threads to hear the moment it's out.</p></details>
+        <details><summary>Does it work on Windows 10?</summary><p>It's built and tested on Windows 11. The installer also runs on Windows 10 (version 1809 or later), but that isn't tested yet.</p></details>
+        <details><summary>Is this the Docker tool called tini?</summary><p>No. This tini is a notch for Windows. <a href="https://github.com/krallin/tini">krallin/tini</a> is an unrelated init process for containers that happens to share the name.</p></details>
+        <details><summary>Why are the files called notch.exe?</summary><p>tini was developed under the name “Notch”, so the binaries and the settings folder still use that name.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Support + note -->
+  <section id="support">
+    <div class="wrap">
+      <p class="kicker">Support</p>
+      <h2>Like tini? Help keep it free.</h2>
+      <p class="lead">tini is made by one person in his spare time. A coffee, a star on GitHub or a bug report all help.</p>
+      <div class="support">
+        <a class="btn btn-primary" href="https://trakteer.id/iamsetiaji"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z M17 10h1.5a2.5 2.5 0 0 1 0 5H17 M8 3v3 M12 3v3"/></svg><span>Buy me a coffee on Trakteer</span></a>
+        <a class="btn btn-ghost" href="https://github.com/dimas3007/tini/discussions">Ideas &amp; questions</a>
+        <a class="btn btn-ghost" href="https://github.com/dimas3007/tini/issues">Report a bug</a>
+      </div>
+
+      <div class="card note" style="margin-top:72px">
+        <div class="avatar" aria-hidden="true"><span class="nochi" data-k="1.4"></span></div>
+        <div>
+          <!-- TODO(Dimas): this is a draft in your voice; edit freely. -->
+          <blockquote>“I built tini because I wanted to see what my AI agent was doing without alt-tabbing, and Windows didn't have a notch. It started as a two-day prototype with Claude Code. If it makes your day a little smoother, that's all I hoped for.”</blockquote>
+          <cite>Dimas Setiaji · <a href="https://www.threads.net/@iamsetiaji_">@iamsetiaji_</a></cite>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <nav>
+      <a href="https://github.com/dimas3007/tini">GitHub</a>
+      <a href="https://github.com/dimas3007/tini/releases">Releases</a>
+      <a href="#privacy">Privacy</a>
+      <a href="https://github.com/dimas3007/tini/discussions">Discussions</a>
+      <a href="https://github.com/dimas3007/tini/issues">Issues</a>
+    </nav>
+    <p>tini is an independent open-source project and is not affiliated with or endorsed by Microsoft, Apple, Anthropic, OpenAI or Google. Claude is a trademark of Anthropic, Codex of OpenAI, Gemini of Google, and Windows of Microsoft. Prayer times are calculated estimates; follow your local authority. Provided “as is”, without warranty.</p>
+    <p>© 2026 Dimas Setiaji · MIT or Apache-2.0</p>
+  </div>
+</footer>
+
+<script>
+// Launch countdown. One constant: Oct 30 2026, 19:00 WIB (12:00 UTC). ?launched previews the "out now" state.
+const LAUNCH = new URLSearchParams(location.search).has("launched") ? Date.now() - 1000 : Date.UTC(2026, 9, 30, 12, 0, 0);
+let cdTimer = 0;
+function tickCountdown() {
+  const ms = LAUNCH - Date.now();
+  const done = ms <= 0;
+  document.querySelectorAll("[data-countdown]").forEach((e) => { e.hidden = done; });
+  document.querySelectorAll("[data-cd-done]").forEach((e) => { e.hidden = !done; });
+  if (done) { clearInterval(cdTimer); return; }
+  const d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60;
+  const set = (k, v) => document.querySelectorAll(`[data-cd="${k}"]`).forEach((e) => { e.textContent = v; });
+  set("d", d); set("h", String(h).padStart(2, "0")); set("m", String(m).padStart(2, "0"));
+  const inline = `${d}d ${h}h ${m}m to go`;
+  document.querySelectorAll("[data-cd-inline]").forEach((e) => { e.textContent = inline; });
+}
+
+tickCountdown();
+cdTimer = setInterval(tickCountdown, 1000);
+// ---------------------------------------------------------------------------------------------
+// Interactive layer: Nochi everywhere, the live notch demo, agent cards, Deck keys, reveals.
+// Only transform/opacity and SVG attributes animate, except the notch shape itself (one small
+// element whose width/height/radius spring like the app). Loops stop offscreen and in hidden
+// tabs; prefers-reduced-motion renders everything still and keeps the clicks.
+// ---------------------------------------------------------------------------------------------
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const NS = "http://www.w3.org/2000/svg";
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // One rAF loop for everything; it sleeps when nothing visible needs a frame.
+  const tickers = new Set();
+  let raf = 0, last = 0;
+  function loop(t) {
+    const dt = last ? Math.min(0.05, (t - last) / 1000) : 1 / 60;
+    last = t;
+    let busy = false;
+    for (const o of tickers) if (o.active && o.tick(t, dt)) busy = true;
+    raf = busy && !document.hidden ? requestAnimationFrame(loop) : 0;
+    if (!raf) last = 0;
+  }
+  const wake = () => { if (!raf && !reduce && !document.hidden) raf = requestAnimationFrame(loop); };
+  document.addEventListener("visibilitychange", wake);
+
+  const seen = new IntersectionObserver((entries) => {
+    for (const e of entries) for (const o of e.target.__live || []) { o.active = e.isIntersecting; o.onVisible && o.onVisible(e.isIntersecting); }
+    wake();
+  }, { rootMargin: "60px" });
+  function watch(el, o) { (el.__live = el.__live || []).push(o); o.active = false; seen.observe(el); }
+
+  let px = -1e5, py = -1e5;
+  addEventListener("pointermove", (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
+
+  // ------------------------------------------------------------------------- Nochi
+  // Eye shapes from the app (pet.rs): [eye width, eye height, half distance between eyes].
+  const SHAPES = { idle: [5, 9, 5.5], curious: [5, 9, 5.5], focused: [5, 5, 5.5], alert: [8, 8, 6.5], sleepy: [9, 2.2, 6.5], zen: [6, 3.6, 5.5] };
+  const svgEl = (tag, attrs) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); return n; };
+
+  class Nochi {
+    constructor(host, { hoverEl, clickEl } = {}) {
+      this.host = host;
+      this.k = +host.dataset.k || 1;
+      this.mood = host.dataset.mood || "idle";
+      this.follow = host.dataset.follow !== "off";
+      this.nod = host.dataset.nod === "on";
+      const svg = svgEl("svg", { viewBox: "-24 -14 48 28", width: 48 * this.k, height: 28 * this.k, "aria-hidden": "true" });
+      this.g = svgEl("g", {});
+      this.eyes = [-1, 1].map(() => svgEl("rect", { fill: "#F5F5F7" }));
+      this.arcs = [-6, 6].map((cx) => svgEl("path", { d: `M ${cx - 3.6} 1.8 A 3.6 3.6 0 0 1 ${cx + 3.6} 1.8`, fill: "none", stroke: "#F5F5F7", "stroke-width": 2.2, "stroke-linecap": "round" }));
+      this.g.append(...this.eyes, ...this.arcs);
+      svg.append(this.g);
+      host.replaceChildren(svg);
+      const now = performance.now();
+      this.look = [0, 0]; this.target = [0, 0];
+      this.blinkAt = now + rand(600, 3000); this.blinkT = -1;
+      this.sacAt = now + rand(800, 2000); this.hopT = -1; this.happy = false;
+      this.rect = null; this.rectAt = 0;
+      const h = hoverEl || host, c = clickEl || host;
+      h.addEventListener("pointerenter", () => { this.happy = true; this.render(performance.now()); wake(); });
+      h.addEventListener("pointerleave", () => { this.happy = false; this.render(performance.now()); wake(); });
+      c.addEventListener("click", () => this.hop());
+      this.render(now);
+      tickers.add(this);
+      watch(host, this);
+    }
+    setMood(m) { this.mood = m; this.render(performance.now()); wake(); }
+    hop() { this.hopT = performance.now(); wake(); }
+    tick(t) {
+      if (this.blinkT < 0 && t > this.blinkAt) {
+        this.blinkT = t;
+        const slow = this.mood === "zen" || this.mood === "sleepy";
+        this.blinkAt = t + (Math.random() < 0.15 ? 420 : rand(slow ? 4500 : 2400, slow ? 8000 : 6000));
+      }
+      if (this.blinkT >= 0 && t - this.blinkT > 380) this.blinkT = -1;
+      if (!this.rect || t - this.rectAt > 400) { this.rect = this.host.getBoundingClientRect(); this.rectAt = t; }
+      const cx = this.rect.left + this.rect.width / 2, cy = this.rect.top + this.rect.height / 2;
+      const dx = px - cx, dy = py - cy;
+      if (this.mood === "focused") this.target = [Math.sin(t / 380) * 2.2, 0.6];
+      else if (this.mood === "zen" || this.mood === "sleepy") this.target = [0, 1.4];
+      else if (this.follow && Math.hypot(dx, dy) < 700) this.target = [clamp(dx / 90, -2.4, 2.4), clamp(dy / 110, -1.4, 1.6)];
+      else if (t > this.sacAt) { this.target = [rand(-1.8, 1.8), rand(-0.8, 0.9)]; this.sacAt = t + rand(1200, 3600); }
+      this.look[0] += (this.target[0] - this.look[0]) * 0.18;
+      this.look[1] += (this.target[1] - this.look[1]) * 0.18;
+      this.render(t);
+      return true;
+    }
+    render(t) {
+      const happy = this.mood === "happy" || (this.happy && (this.mood === "idle" || this.mood === "curious"));
+      this.eyes.forEach((r) => r.setAttribute("visibility", happy ? "hidden" : "visible"));
+      this.arcs.forEach((a) => a.setAttribute("visibility", happy ? "visible" : "hidden"));
+      let [w, h, d] = SHAPES[this.mood] || SHAPES.idle;
+      if (this.mood === "alert") { const g = 1 + 0.1 * (Math.sin(t / 240) + 1); w *= g; h *= g; }
+      let b = 0;
+      if (this.blinkT >= 0) {
+        const e = t - this.blinkT;
+        b = e < 150 ? e / 150 : e < 240 ? 1 : 1 - (e - 240) / 140;
+        b = b * b * (3 - 2 * b);
+      }
+      const hh = Math.max(2, h - (h - 2) * b);
+      this.eyes.forEach((r, i) => {
+        const side = i ? 1 : -1;
+        r.setAttribute("x", side * d - w / 2); r.setAttribute("y", -hh / 2);
+        r.setAttribute("width", w); r.setAttribute("height", hh);
+        r.setAttribute("rx", Math.min(w, hh) / 2);
+      });
+      let hop = 0;
+      if (this.hopT >= 0) { const p = (t - this.hopT) / 460; if (p > 1) this.hopT = -1; else hop = Math.sin(p * Math.PI) * (4 - 1.5 * p); }
+      const bob = reduce ? 0 : this.nod ? Math.sin((t / 430) * Math.PI * 2) * 0.9 : Math.sin((t / 1700) * Math.PI * 2) * 0.45;
+      this.g.setAttribute("transform", `translate(${this.look[0].toFixed(2)} ${(this.look[1] + bob - hop).toFixed(2)})`);
+    }
+  }
+  const makeNochis = (root, opts) => [...root.querySelectorAll(".nochi")].map((n) => new Nochi(n, opts));
+
+  // ------------------------------------------------------------------------- the notch island
+  // Shapes per state from geometry.rs (logical px); the stage scales them.
+  const STATES = {
+    peek: { w: 60, h: 20, r: 10 }, pill: { w: 120, h: 28, r: 14 }, full: { w: 300, h: 52, r: 22 },
+    live: { w: 210, h: 28, r: 14 }, card: { w: 380, h: 104, r: 26 }, glance: { w: 280, h: 32, r: 16 },
+    focus: { w: 300, h: 52, r: 22 }, music: { w: 300, h: 52, r: 22 },
+  };
+  const ICON = {
+    x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    prev: '<svg viewBox="0 0 24 24"><path d="M5 5h3v14H5zM20 5v14L9 12z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+    next: '<svg viewBox="0 0 24 24"><path d="M16 5h3v14h-3zM4 5v14l11-7z"/></svg>',
+  };
+  const ACTIVITY = ["Reading README.md", "Editing auth.ts", "Running tests", "Thinking…"];
+  const LAYERS = {
+    peek: `<span class="nochi" data-k=".78" style="left:30px;top:10px"></span>`,
+    pill: `<span class="nochi" style="left:27px;top:14px"></span><span class="ring-sm" style="left:84px;top:8px"></span><span class="t-strong" style="right:14px;top:5px;color:rgba(245,245,247,.75)">4</span>`,
+    full: `<span class="nochi" data-k="1.2" style="left:30px;top:27px"></span><span class="t-kicker" style="left:56px;top:9px">Next · 10:00 AM</span><span class="t-title" style="left:56px;top:25px">Review auth PR</span><span class="t-kicker" style="right:18px;top:18px">4 left</span>`,
+    live: `<span class="orb" style="left:11px;top:6px;width:16px;height:16px"></span><span class="chrome" style="left:8px;top:3px"></span><span class="nochi" data-k=".62" data-mood="focused" data-follow="off" style="left:19px;top:14px"></span><span class="ticker" style="left:38px;top:5px;width:132px">${ACTIVITY.map((a) => `<span>${a}</span>`).join("")}</span><span class="t-dim" style="right:14px;top:8px">tini</span>`,
+    card: `<span class="tile" style="left:14px;top:10px;width:30px;height:30px"></span><span class="nochi" data-k=".85" data-mood="alert" data-follow="off" style="left:29px;top:25px"></span><span class="bang" style="left:39px;top:0">!</span><span class="t-title" style="left:54px;top:8px;font-size:13.5px">Claude wants to run</span><span class="t-kicker" style="left:54px;top:26px">tini · Bash</span><button type="button" class="cbtn deny" style="left:294px;top:9px" aria-label="Deny">${ICON.x}</button><button type="button" class="cbtn allow" style="left:334px;top:9px" aria-label="Allow">${ICON.check}</button><span class="code" style="left:14px;top:50px;width:352px;height:30px;box-sizing:border-box"><i>$</i>git push origin main</span><span class="countdown" style="left:26px;top:99px;width:328px"><b></b></span>`,
+    glance: `<span class="nochi" data-k=".85" data-mood="happy" data-follow="off" style="left:26px;top:16px"></span><span style="left:44px;top:8px"><span class="t-strong g-title" style="font-size:13px">Allowed</span>&nbsp;&nbsp;<span class="t-kicker g-detail">git push</span></span>`,
+    focus: `<span class="nochi" data-k="1.2" data-mood="zen" style="left:30px;top:27px"></span><span class="t-kicker" style="left:56px;top:9px">Focus 2 of 4 · Review auth PR</span><span class="t-title f-time" style="left:56px;top:24px;font:600 16px var(--display)">18:42</span><span class="ring-lg" style="right:18px;top:15px"></span>`,
+    music: `<span class="nochi" data-k="1.2" data-nod="on" style="left:30px;top:27px"></span><span class="t-kicker" style="left:56px;top:9px">Nochi &amp; Friends</span><span class="marquee" style="left:56px;top:24px;width:118px"><span>Soft Launch · lo-fi edit&nbsp;&nbsp;·&nbsp;&nbsp;Soft Launch · lo-fi edit</span></span><span class="eq" style="right:104px;top:20px"><i></i><i></i><i></i><i></i></span><span class="media" style="right:16px;top:21px">${ICON.prev}${ICON.pause}${ICON.next}</span>`,
+  };
+
+  class Island {
+    constructor(host, names, start, scaleFor) {
+      this.host = host;
+      this.scaleFor = scaleFor;
+      this.root = document.createElement("div");
+      this.root.className = "island";
+      this.shape = document.createElement("div");
+      this.shape.className = "shape";
+      this.root.append(this.shape);
+      this.layers = {};
+      for (const n of names) {
+        const l = document.createElement("div");
+        l.className = "layer";
+        l.style.width = STATES[n].w + "px";
+        l.style.height = STATES[n].h + "px";
+        l.innerHTML = LAYERS[n];
+        this.root.append(l);
+        this.layers[n] = l;
+      }
+      host.prepend(this.root);
+      this.nochis = makeNochis(this.root, { hoverEl: host, clickEl: host });
+      this.dims = ["w", "h", "r"].map(() => ({ x: 0, v: 0, t: 0 }));
+      this.state = null;
+      this.set(start, true);
+      new ResizeObserver(() => this.layout()).observe(host);
+      this.layout();
+      tickers.add(this);
+      watch(host, this);
+    }
+    layout() {
+      const s = this.scaleFor(this.host.clientWidth);
+      this.root.style.transform = `scale(${s})`;
+      if (this.host.dataset.fit) this.host.style.height = Math.ceil(STATES.card.h * s + 22) + "px";
+    }
+    set(name, instant) {
+      const prev = this.state ? STATES[this.state] : null;
+      this.state = name;
+      for (const n in this.layers) this.layers[n].classList.toggle("on", n === name);
+      const st = STATES[name];
+      const grow = !prev || st.w * st.h >= prev.w * prev.h;
+      this.cfg = grow ? { resp: 0.42, zeta: 0.74 } : { resp: 0.32, zeta: 1 };
+      [st.w, st.h, st.r].forEach((v, i) => { this.dims[i].t = v; if (instant || reduce) { this.dims[i].x = v; this.dims[i].v = 0; } });
+      this.apply();
+      wake();
+    }
+    tick(t, dt) {
+      const w = (2 * Math.PI) / this.cfg.resp, k = w * w, c = 2 * this.cfg.zeta * w;
+      let moving = false;
+      for (const d of this.dims) {
+        const a = -k * (d.x - d.t) - c * d.v;
+        d.v += a * dt; d.x += d.v * dt;
+        if (Math.abs(d.x - d.t) > 0.05 || Math.abs(d.v) > 0.05) moving = true; else { d.x = d.t; d.v = 0; }
+      }
+      this.apply();
+      return moving;
+    }
+    apply() {
+      const [w, h, r] = this.dims.map((d) => Math.max(0, d.x));
+      this.shape.style.width = w + "px";
+      this.shape.style.height = h + "px";
+      this.shape.style.borderRadius = `0 0 ${r}px ${r}px`;
+    }
+    onVisible(v) { this.host.classList.toggle("paused", !v); }
+  }
+
+  // Rotating activity line in a Live layer.
+  function ticker(layer) {
+    const spans = [...layer.querySelectorAll(".ticker span")];
+    let i = 0, id = 0;
+    // All lines sit in the same spot: the current one fades in, the previous one fades up and out.
+    const place = (prev) => spans.forEach((s, k) => { s.classList.toggle("on", k === i); s.classList.toggle("out", k === prev); });
+    place();
+    return {
+      start() { if (!id && !reduce) id = setInterval(() => { const prev = i; i = (i + 1) % spans.length; place(prev); }, 1500); },
+      stop() { clearInterval(id); id = 0; },
+    };
+  }
+
+  function countdown(layer, ms) {
+    const b = layer.querySelector(".countdown b");
+    b.style.transition = "none";
+    b.style.transform = "scaleX(1)";
+    void b.offsetWidth;
+    if (!reduce) { b.style.transition = `transform ${ms}ms linear`; b.style.transform = "scaleX(0)"; }
+  }
+
+  function glance(island, title, detail, mood) {
+    const l = island.layers.glance;
+    l.querySelector(".g-title").textContent = title;
+    l.querySelector(".g-detail").textContent = detail;
+    const n = island.nochis.find((x) => l.contains(x.host));
+    n.setMood(mood);
+    island.set("glance");
+    if (mood === "happy") n.hop();
+  }
+
+  // ------------------------------------------------------------------------- hero demo
+  const demoEl = document.getElementById("demo");
+  if (demoEl) {
+    const names = ["peek", "pill", "full", "live", "card", "glance", "focus", "music"];
+    const island = new Island(demoEl, names, "pill", (w) => clamp((w - 40) / 380, 0.75, 1.6));
+    const live = ticker(island.layers.live);
+    const DUR = { idle: 2800, live: 4200, card: 6000, focus: 3400, music: 3600 };
+    const SEQ = ["idle", "live", "card", "focus", "music"];
+    let size = "pill", step = 0, timer = 0, clock = 0, visible = false, secs = 18 * 60 + 42;
+    const timeEl = island.layers.focus.querySelector(".f-time");
+
+    function leave() { clearTimeout(timer); clearInterval(clock); live.stop(); }
+    function go(i) {
+      leave();
+      step = (i + SEQ.length) % SEQ.length;
+      const name = SEQ[step];
+      island.set(name === "idle" ? size : name);
+      if (name === "live") live.start();
+      if (name === "card") countdown(island.layers.card, DUR.card - 400);
+      if (name === "focus" && !reduce) clock = setInterval(() => { secs = Math.max(0, secs - 1); timeEl.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`; }, 1000);
+      if (!visible || reduce) return;
+      timer = setTimeout(() => {
+        if (name === "card") { glance(island, "No answer", "back to Claude's dialog", "idle"); timer = setTimeout(() => go(step + 1), 1800); }
+        else go(step + 1);
+      }, DUR[name]);
+    }
+    function answer(ok) {
+      leave();
+      glance(island, ok ? "Allowed" : "Declined", "git push", ok ? "happy" : "idle");
+      if (visible && !reduce) timer = setTimeout(() => go(SEQ.indexOf("card") + 1), 1700);
+    }
+    island.layers.card.querySelector(".allow").addEventListener("click", (e) => { e.stopPropagation(); answer(true); });
+    island.layers.card.querySelector(".deny").addEventListener("click", (e) => { e.stopPropagation(); answer(false); });
+    demoEl.addEventListener("click", () => go(island.state === "glance" ? SEQ.indexOf("card") + 1 : step + 1));
+    demoEl.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(step + 1); } });
+    document.querySelectorAll("[data-size]").forEach((b) => b.addEventListener("click", () => {
+      size = b.dataset.size;
+      document.querySelectorAll("[data-size]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      go(SEQ.indexOf("idle"));
+    }));
+    watch(demoEl, { tick: () => false, onVisible(v) { visible = v; if (v) go(step); else leave(); } });
+  }
+
+  // ------------------------------------------------------------------------- agent cards
+  document.querySelectorAll('[data-island="live"]').forEach((el) => {
+    const island = new Island(el, ["live"], "live", (w) => clamp((w - 24) / 230, 0.8, 1.7));
+    const live = ticker(island.layers.live);
+    watch(el, { tick: () => false, onVisible(v) { v ? live.start() : live.stop(); } });
+  });
+
+  document.querySelectorAll('[data-island="card"]').forEach((el) => {
+    el.dataset.fit = "1";
+    const island = new Island(el, ["card", "glance"], "card", (w) => clamp((w - 40) / 396, 0.55, 1.3));
+    let timer = 0, visible = false;
+    const toCard = () => { clearTimeout(timer); island.set("card"); countdown(island.layers.card, 9000); if (visible && !reduce) timer = setTimeout(() => { glance(island, "No answer", "back to Claude's dialog", "idle"); timer = setTimeout(toCard, 2200); }, 9000); };
+    const answer = (ok) => { clearTimeout(timer); glance(island, ok ? "Allowed" : "Declined", "git push", ok ? "happy" : "idle"); timer = setTimeout(toCard, 2400); };
+    island.layers.card.querySelector(".allow").addEventListener("click", () => answer(true));
+    island.layers.card.querySelector(".deny").addEventListener("click", () => answer(false));
+    watch(el, { tick: () => false, onVisible(v) { visible = v; if (v) toCard(); else clearTimeout(timer); } });
+  });
+
+
+  document.querySelectorAll('[data-island="music"]').forEach((el) => {
+    new Island(el, ["music"], "music", (w) => clamp((w - 24) / 320, 0.7, 1.5));
+  });
+
+  // "Never in the way": Shy → Compact → Full → peeks under a maximized window → hides in fullscreen.
+  document.querySelectorAll('[data-island="sizes"]').forEach((el) => {
+    const island = new Island(el, ["peek", "pill", "full"], "peek", (w) => clamp((w - 40) / 316, 0.7, 1.5));
+    const win = document.createElement("div"); win.className = "mock-win";
+    const fs = document.createElement("div"); fs.className = "mock-fs";
+    el.append(win, fs);
+    const label = el.parentElement.querySelector("[data-sizes-label]");
+    const STEPS = [
+      ["peek", "<b>Shy</b> · just Nochi peeking"],
+      ["pill", "<b>Compact</b> · the small pill"],
+      ["full", "<b>Full</b> · your next task, always in view"],
+      ["win", "Peeks under a maximized window"],
+      ["fs", "Hides in fullscreen"],
+    ];
+    let i = 0, timer = 0, visible = false;
+    const show = () => {
+      const [k, en] = STEPS[i];
+      island.set(k === "win" || k === "fs" ? "peek" : k);
+      win.classList.toggle("on", k === "win");
+      fs.classList.toggle("on", k === "fs");
+      island.root.style.opacity = k === "fs" ? 0 : 1;
+      label.innerHTML = en;
+    };
+    const next = () => { clearTimeout(timer); show(); if (visible && !reduce) timer = setTimeout(() => { i = (i + 1) % STEPS.length; next(); }, i >= 3 ? 2400 : 1800); };
+    el.addEventListener("click", () => { i = (i + 1) % STEPS.length; next(); });
+    watch(el, { tick: () => false, onVisible(v) { visible = v; if (v) next(); else clearTimeout(timer); } });
+    show();
+  });
+
+  // ------------------------------------------------------------------------- one-shot reveals
+  const once = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      once.unobserve(e.target);
+      e.target.__once && e.target.__once();
+    }
+  }, { threshold: 0.2 });
+  const onSeen = (el, fn) => { el.__once = fn; once.observe(el); };
+
+  document.querySelectorAll("[data-meters]").forEach((m) => onSeen(m, () => {
+    m.querySelectorAll(".track b").forEach((b, i) => setTimeout(() => { b.style.transform = `scaleX(${b.dataset.v})`; }, reduce ? 0 : 150 + i * 160));
+  }));
+
+  document.querySelectorAll(".count[data-to]").forEach((el) => {
+    const to = +el.dataset.to;
+    if (reduce) return;
+    el.textContent = "0";
+    onSeen(el, () => {
+      const t0 = performance.now();
+      const f = (t) => { const p = Math.min(1, (t - t0) / 1300); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(f); };
+      requestAnimationFrame(f);
+    });
+  });
+
+  if (!reduce) {
+    const targets = document.querySelectorAll("section:not(.hero) .kicker, section:not(.hero) h2, section:not(.hero) .lead, section:not(.hero) .card, section:not(.hero) .ss, .taskman, .bigstat, .setting, .faq details, .support .btn");
+    targets.forEach((el) => {
+      const sibs = [...el.parentElement.children];
+      el.style.setProperty("--d", `${(sibs.indexOf(el) % 6) * 70}ms`);
+      el.classList.add("reveal");
+      onSeen(el, () => el.classList.add("in"));
+    });
+  }
+
+  // ------------------------------------------------------------------------- Deck keys
+  document.querySelectorAll("[data-deck]").forEach((deck) => {
+    const toast = deck.parentElement.querySelector("[data-deck-toast]");
+    let hide = 0;
+    deck.querySelectorAll(".key").forEach((k) => k.addEventListener("click", () => {
+      k.classList.add("press");
+      setTimeout(() => k.classList.remove("press"), 160);
+      toast.innerHTML = k.dataset.n ? `<b>Ctrl+Alt+${k.dataset.n}</b> · ${k.dataset.label}` : `<b>${k.dataset.label}</b>`;
+      toast.classList.add("on");
+      clearTimeout(hide);
+      hide = setTimeout(() => toast.classList.remove("on"), 1800);
+    }));
+  });
+
+  // ------------------------------------------------------------------------- standalone Nochis
+  document.querySelectorAll(".nochi").forEach((n) => {
+    if (n.firstChild) return; // already built inside an island
+    const stage = n.closest(".pet-stage, .avatar, .brand");
+    new Nochi(n, { hoverEl: stage || n, clickEl: stage || n });
+  });
+  document.querySelectorAll("[data-moods]").forEach((g) => {
+    const host = g.parentElement.querySelector(".pet-stage .nochi");
+    const pet = host && host.__live && host.__live[0];
+    g.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+      g.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      pet.setMood(b.dataset.mood);
+      if (b.dataset.mood === "happy") pet.hop();
+    }));
+  });
+})();
+</script>
+</body>
+</html>
