@@ -1,0 +1,15 @@
+[package]
+name = "notch-bridge"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false
+
+# Deliberately no `windows` crate: this exe runs on every hook, so it must be small and start fast.
+# `windows-sys` below is only function declarations, with no start-up cost.
+[dependencies]
+notch-protocol = { path = "../protocol" }
+# preserve_order: the key order of the user's settings.json isn't shuffled when rewritten.
+serde_json = { version = "1", features = ["preserve_order"] }
+# Raw bindings only (no runtime), to verify the pipe belongs to the same user.
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_System_Pipes", "Win32_System_Threading"] }

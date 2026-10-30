@@ -1,0 +1,72 @@
+name: Bug report
+description: Something in tini doesn't work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please check [existing issues](https://github.com/dimas3007/tini/issues) first. Questions and ideas are welcome in [Discussions](https://github.com/dimas3007/tini/discussions).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead? Screenshots or a short screen recording help a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the panel
+        2. Click ...
+        3. ...
+  - type: input
+    id: version
+    attributes:
+      label: tini version
+      description: From the release you installed, or the commit if you built it yourself.
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: Run `winver` to see it.
+      placeholder: Windows 11 24H2 (26100)
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Notch, panel or animations
+        - Tasks / Today
+        - Focus timer
+        - Music
+        - Command bar or Deck
+        - Widgets (prayer times, clipboard)
+        - Claude Code hooks or cards
+        - MCP server
+        - Installer / uninstaller
+        - Other
+  - type: textarea
+    id: setup
+    attributes:
+      label: Setup details
+      description: Monitors and scaling (e.g. 2 monitors, 150%), GPU, other apps that might be involved (Claude Code version, media player, …).
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: A debug build (`cargo build`) prints an event log in its console. Paste the relevant part if you have it.
+      render: text
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: I removed tokens, file contents and anything else private from this report.
+          required: true

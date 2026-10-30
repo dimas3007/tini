@@ -1,0 +1,85 @@
+name: Release
+
+# Run manually (Actions → Release → Run workflow) with a new tag like v0.2.0 to build tini and
+# create a draft GitHub release for that tag. It is not triggered by tags on purpose: running it
+# for a tag whose release is already published would turn that release back into a draft.
+# Asset names carry no version, so https://github.com/<owner>/tini/releases/latest/download/tini-setup.zip
+# always points at the newest published (non-draft) release.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to create, e.g. v0.2.0"
+        required: true
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+env:
+  CARGO_TERM_COLOR: always
+  TAG: ${{ inputs.tag }}
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust (MSVC)
+        run: rustup toolchain install stable --profile minimal && rustup default stable
+      - name: Test
+        run: cargo test --workspace --locked
+      - name: Build
+        run: cargo build --workspace --release --locked
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+          }
+          $version = $env:TAG -replace '^v', ''
+          & $iscc "/DAppVersion=$version" "/DBinDir=..\target\release" installer\tini.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory dist\portable -Force | Out-Null
+          Copy-Item target\release\notch.exe, target\release\notch-bridge.exe, assets\adhan.mp3, README.md, LICENSE-MIT, LICENSE-APACHE dist\portable
+          Compress-Archive -Path dist\tini-setup.exe -DestinationPath dist\tini-setup.zip
+          Compress-Archive -Path dist\portable\* -DestinationPath dist\tini-portable.zip
+
+          $files = 'dist\tini-setup.exe', 'dist\portable\notch.exe', 'dist\portable\notch-bridge.exe', 'dist\tini-setup.zip', 'dist\tini-portable.zip'
+          $sums = $files | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $(Split-Path $_ -Leaf)" }
+          $sums | Out-File -Encoding ascii dist\SHA256SUMS.txt
+
+          $notes = (Get-Content .github\release-notes.md -Raw).Replace('{{VERSION}}', $env:TAG).Replace('{{SHA256SUMS}}', ($sums -join "`n"))
+          $notes | Out-File -Encoding utf8 dist\release-notes.md
+
+      - name: Attest build provenance
+        # Artifact attestations need a public repo (or GitHub Enterprise Cloud for private ones).
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/tini-setup.exe
+            dist/tini-setup.zip
+            dist/tini-portable.zip
+            dist/portable/notch.exe
+            dist/portable/notch-bridge.exe
+
+      - name: Publish draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          target_commitish: ${{ github.sha }}
+          draft: true
+          body_path: dist/release-notes.md
+          generate_release_notes: true
+          files: |
+            dist/tini-setup.zip
+            dist/tini-portable.zip
+            dist/SHA256SUMS.txt

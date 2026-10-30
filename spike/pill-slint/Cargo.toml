@@ -1,0 +1,13 @@
+[package]
+name = "pill-slint"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Default features: winit backend with the femtovg (OpenGL) and software renderers.
+# The renderer is chosen at runtime via env SLINT_BACKEND=winit-femtovg / winit-software.
+slint = "1.18"
+
+[dependencies.windows]
+version = "0.62"
+features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"]

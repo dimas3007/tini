@@ -1,0 +1,10 @@
+[workspace]
+members = ["pill-composition", "pill-slint"]
+resolver = "2"
+
+# The same release profile for both variants so the comparison is fair.
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

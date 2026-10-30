@@ -1,0 +1,23 @@
+# Rust build output
+target/
+**/*.rs.bk
+
+# Machine-specific settings for cargo-env.ps1
+cargo-env.local.ps1
+
+# Debug & profiling
+*.pdb
+*.log
+
+# Editor & OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Never commit OAuth client files or credentials
+client_secret*.json
+*.credentials.json
+
+# Installer and release output
+dist/
